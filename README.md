@@ -32,26 +32,26 @@ flowchart LR
         U[User Browser]
     end
 
-    subgraph Frontend [Frontend (React + TS)]
-        FE[SPA - Alumni Network UI]
+    subgraph Frontend["Frontend - React + TypeScript"]
+        FE["SPA: Alumni Network UI"]
     end
 
-    subgraph Backend [Backend (FastAPI)]
-        APIRouters[Routers (auth, dashboard, alumni)]
-        Services[Services / Business Logic]
-        Schemas[Pydantic Schemas (request/response)]
-        Models[ORM Models]
+    subgraph Backend["Backend - FastAPI"]
+        APIRouters["Routers: auth, dashboard, alumni"]
+        Services["Services / Business Logic"]
+        Schemas["Pydantic Schemas"]
+        Models["ORM Models"]
     end
 
-    subgraph Infra [Infrastructure]
-        Docker[Docker Compose]
-        DB[(PostgreSQL)]
-        Alembic[Alembic Migrations]
-        pgAdmin[pgAdmin (DB GUI)]
+    subgraph Infrastructure["Infrastructure"]
+        Docker["Docker Compose"]
+        DB[("PostgreSQL")]
+        Alembic["Alembic Migrations"]
+        pgAdmin["pgAdmin (DB GUI)"]
     end
 
-    U -->|HTTP (HTTPS)| FE
-    FE -->|REST API calls<br/>GET /login<br/>POST /register<br/>GET /me<br/>GET /alumni...| APIRouters
+    U -->|HTTP / HTTPS| FE
+    FE -->|API Calls: GET /login, POST /register, GET /me, GET /alumni...| APIRouters
     APIRouters --> Schemas
     APIRouters --> Services
     Services --> Models
