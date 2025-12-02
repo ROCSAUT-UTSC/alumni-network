@@ -1,0 +1,52 @@
+# -------------------------
+# -------------------------
+.env
+*.env
+*/.env
+*.env.local
+*.env.development
+*.env.production
+
+# -------------------------
+# Python (backend)
+# -------------------------
+backend/.venv/
+backend/venv/
+backend/__pycache__/
+backend/**/*.pyc
+**/__pycache__/
+**/*.pyc
+
+# -------------------------
+# Alembic cache files
+# -------------------------
+backend/alembic/versions/*.pyc
+
+# -------------------------
+# Node / Next.js (frontend)
+# -------------------------
+frontend/node_modules/
+frontend/.next/
+frontend/dist/
+frontend/build/
+frontend/out/
+
+# -------------------------
+# Docker volumes
+# -------------------------
+db-data/
+
+# -------------------------
+# Logs / PIDs
+# -------------------------
+*.log
+*.pid
+
+# -------------------------
+# OS / Editor
+# -------------------------
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
