@@ -1,4 +1,4 @@
-# 🎓 Alumni Network – Monorepo
+# 🎓 Alumni Network
 
 This monorepo contains the **Alumni Network** platform:
 
