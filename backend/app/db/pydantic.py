@@ -1,15 +1,19 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-class Products(BaseModel):
+class User(BaseModel):
   id: int
   name: str
-  description: str
-  price: float
-  quantity: int
+  sex: str
+  major: str
+  about: str = Field(max_length = 500)
+  email: str
+  password: str
 
 class Customer(BaseModel):
   id: int
   name: str
-  product_id : int
-
-  #test
+  sex: str
+  major: str
+  about: str = Field(max_length = 500)
+  email: str
+  password: str
