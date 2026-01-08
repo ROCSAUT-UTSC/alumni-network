@@ -9,7 +9,7 @@ class User(BaseModel):
   email: str
   password: str
 
-class Customer(BaseModel):
+class Alumni(BaseModel):
   id: int
   name: str
   sex: str
