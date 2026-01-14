@@ -1,4 +1,5 @@
 import styles from "./card_styles.module.css";
+import Image from "next/image";
 
 type CardProps = {
   name: string;
@@ -30,12 +31,13 @@ export default function Card({
           Connect
         </button>
 
-        {imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img className={styles.photoImg} src={imageUrl} alt={`${name} profile`} />
-        ) : (
-          <div className={styles.photoPlaceholder} aria-label="Profile placeholder" />
-        )}
+        <Image
+            src={imageUrl ?? "/profile_icon.png"}
+            alt={`${name} profile`}
+            fill
+            className={styles.photoImg}
+        />
+
       </div>
 
       {/* Alumni Info */}
