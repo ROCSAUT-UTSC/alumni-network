@@ -46,8 +46,9 @@
 
 
 .photoImg {
-  object-fit: contain;
-  object-position: top;
+  object-fit: cover;
+  object-position: center -50px;
+  transform: scale(0.75);
 }
 
 
