@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import Optional, Literal
 from pydantic import BaseModel, EmailStr, Field
 
-from app.modules.students.schemas import StudentProfileCreate
-from app.modules.alumni.schemas import AlumniProfileCreate
+from app.modules.students.schemas import StudentCreate
+from app.modules.alumnis.schemas import AlumniCreate
 from app.modules.accounts.schemas import UserMe
 
 ### JWT AUTH SCHEMAS ###
@@ -17,14 +17,14 @@ class RegisterStudentRequest(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8, max_length=255)
     timezone: str = Field(default="America/Toronto", max_length=50)
-    profile: StudentProfileCreate
+    profile: StudentCreate
 
 
 class RegisterAlumniRequest(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8, max_length=255)
     timezone: str = Field(default="America/Toronto", max_length=50)
-    profile: AlumniProfileCreate
+    profile: AlumniCreate
 
 
 class TokenResponse(BaseModel):
