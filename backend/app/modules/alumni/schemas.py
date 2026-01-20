@@ -1,0 +1,60 @@
+from __future__ import annotations
+
+import uuid
+from typing import Optional
+
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class AlumniBase(BaseModel):
+    first_name: str = Field(min_length=1, max_length=100)
+    last_name: str = Field(min_length=1, max_length=100)
+
+    pronouns: Optional[str] = Field(default=None, max_length=50)
+    industry: str = Field(min_length=1, max_length=120)
+
+    bio: Optional[str] = Field(default=None, max_length=500)
+    location: Optional[str] = Field(default=None, max_length=120)
+    position: Optional[str] = Field(default=None, max_length=120)
+
+    work_duration_months: Optional[int] = Field(default=None, ge=0, le=60 * 12)
+    academic_history: Optional[str] = Field(default=None, max_length=500)
+
+    graduated_from: Optional[str] = Field(default=None, max_length=150)
+    graduated_at_year: Optional[int] = Field(default=None, ge=1900, le=2100)
+
+    linkedin: Optional[str] = Field(default=None, max_length=300)
+    personal_website: Optional[str] = Field(default=None, max_length=300)
+    company_website: Optional[str] = Field(default=None, max_length=300)
+
+
+class AlumniCreate(AlumniBase):
+    pass
+
+
+class AlumniUpdate(BaseModel):
+    first_name: Optional[str] = Field(default=None, min_length=1, max_length=100)
+    last_name: Optional[str] = Field(default=None, min_length=1, max_length=100)
+
+    pronouns: Optional[str] = Field(default=None, max_length=50)
+    industry: Optional[str] = Field(default=None, min_length=1, max_length=120)
+
+    bio: Optional[str] = Field(default=None, max_length=500)
+    location: Optional[str] = Field(default=None, max_length=120)
+    position: Optional[str] = Field(default=None, max_length=120)
+
+    work_duration_months: Optional[int] = Field(default=None, ge=0, le=60 * 12)
+    academic_history: Optional[str] = Field(default=None, max_length=500)
+
+    graduated_from: Optional[str] = Field(default=None, max_length=150)
+    graduated_at_year: Optional[int] = Field(default=None, ge=1900, le=2100)
+
+    linkedin: Optional[str] = Field(default=None, max_length=300)
+    personal_website: Optional[str] = Field(default=None, max_length=300)
+    company_website: Optional[str] = Field(default=None, max_length=300)
+
+
+class AlumniPublic(AlumniBase):
+    model_config = ConfigDict(from_attributes=True)
+
+    uid: uuid.UUID
