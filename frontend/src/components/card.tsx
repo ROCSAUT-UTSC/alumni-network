@@ -25,19 +25,18 @@ export default function Card({
   const shownTags = tags.slice(0, 3);
 
   return (
-    <section className={styles.card}>
+    <section className="relative box-border flex h-[330px] w-[395px] flex-col overflow-hidden rounded-[24px] border-2 border-[#774c3d] bg-[#fafaf5] pb-[10px]">
       <div className={styles.top}>
         <button type="button" className={styles.connectBtn} onClick={onConnect}>
           Connect
         </button>
 
         <Image
-            src={imageUrl ?? "/profile_icon.png"}
-            alt={`${name} profile`}
-            fill
-            className={styles.photoImg}
+          src={imageUrl ?? "/profile_icon.png"}
+          alt={`${name} profile`}
+          fill
+          className={styles.photoImg}
         />
-
       </div>
 
       {/* Alumni Info */}
