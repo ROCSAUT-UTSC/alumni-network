@@ -1,5 +1,5 @@
 import resend
-from app.core.config import get_settings
+from app.modules.systems.config import get_settings
 
 settings = get_settings()
 

@@ -12,6 +12,10 @@ class Settings:
     POSTGRES_HOST: str = os.getenv("POSTGRES_HOST", "db")
     POSTGRES_PORT: str = os.getenv("POSTGRES_PORT", "5432")
 
+    # Email
+    RESEND_API_KEY: str = os.getenv("RESEND_API_KEY", "")
+    EMAIL_FROM: str = os.getenv("EMAIL_FROM", "no-reply@example.com")
+    
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> str:
         return (
