@@ -1,7 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.core.config import get_settings
-from app.routers import health
+from app.modules.systems.config import get_settings
+from app.modules.systems.router import router as system_router
+from app.modules.students.router import router as student_router
+from app.modules.admins.router import router as admin_router
+from app.modules.alumnis.router import router as alumni_router
 
 settings = get_settings()
 
@@ -15,7 +18,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(health.router)
+app.include_router(system_router)
+app.include_router(student_router)
+app.include_router(admin_router)
+app.include_router(alumni_router)
 
 @app.get("/")
 def root():

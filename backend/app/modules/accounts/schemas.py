@@ -5,9 +5,7 @@ from datetime import datetime
 from typing import Optional, Union, Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
-
 from app.modules.accounts.constants import UserRole 
-
 from app.modules.students.schemas import StudentPublic
 from app.modules.alumnis.schemas import AlumniPublic
 from app.modules.admins.schemas import AdminPublic
