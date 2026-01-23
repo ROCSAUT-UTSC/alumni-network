@@ -8,7 +8,7 @@ from sqlalchemy import Column
 from sqlalchemy import Enum as SAEnum
 
 from app.modules.accounts.constants import UserRole
-from app.models.utils import utcnow
+from app.modules.systems.utils import utcnow
 
 
 class AccountUser(SQLModel, table=True):
@@ -36,6 +36,10 @@ class AccountUser(SQLModel, table=True):
     last_activation_email_sent: Optional[datetime] = None
 
     token_version: int = Field(default=0)
+    verify_jti_hash: Optional[str] = Field(default=None, max_length=64, index=True)
+    verify_expires_at: Optional[datetime] = Field(default=None, index=True)
+    verified_at: Optional[datetime] = Field(default=None, index=True)
+
 
     student_profile: Optional["StudentProfile"] = Relationship(back_populates="account", sa_relationship_kwargs={"uselist": False},)
     alumni_profile: Optional["AlumniProfile"] = Relationship(back_populates="account",  sa_relationship_kwargs={"uselist": False},)
