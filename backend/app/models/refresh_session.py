@@ -6,7 +6,7 @@ from typing import Optional
 
 from sqlmodel import Field, SQLModel
 
-from app.models.utils import utcnow
+from app.modules.systems.utils import utcnow
 
 
 class RefreshSession(SQLModel, table=True):
