@@ -11,9 +11,9 @@ from app.modules.systems.utils import utcnow
 from app.models.user import AccountUser, StudentProfile, AlumniProfile
 
 from app.modules.systems.email_service import send_verification_email
-from app.modules.auth.deps import get_db, get_current_user, get_settings
-from app.modules.auth.schemas import RegisterRequest,RegisterResponse, RegisterSuccess, RegisterNeedsVerification
-from app.modules.auth.security import create_access_token, hash_password, create_refresh_token, decode_token, hash_verify_jti, create_email_verify_token
+from app.modules.auth.deps import *
+from app.modules.auth.schemas import *
+from app.modules.auth.security import *
 from app.modules.accounts.serivce import build_user_me
 from app.modules.accounts.constants import UserRole
 
@@ -75,7 +75,7 @@ def register(
     # Send email after successful commit
     if REQUIRE_VERIFY:
         bg.add_task(send_verification_email, to_email=to_email, token=token)
-        return RegisterNeedsVerification()
+        return VerificationRequired()
 
     db.refresh(account)
     access = create_access_token(subject=str(account.uid), role=str(account.role))
@@ -86,6 +86,68 @@ def register(
         tokens={"access_token": access, "refresh_token": refresh},
     )
 
+@router.post("/login", response_model=LoginResponse)
+def login(payload: LoginRequest, db: Session = Depends(get_db)):
+    """
+    Login with email and password.
+    """
+    user = db.execute(select(AccountUser).where(AccountUser.email == payload.email)).scalar_one_or_none()
+    if not user or not user.is_active:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+
+    if not user.password_hash:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This account uses OAuth. Please sign in with Google/LinkedIn.",
+        )
+
+    if not verify_password(payload.password, user.password_hash):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+
+    if REQUIRE_VERIFY and not user.is_verified:
+        return VerificationRequired()
+
+    user.last_login_at = utcnow()
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
+    return LoginSuccess()
+
+@router.post("/refresh", response_model=RefreshSuccess)
+def refresh(payload: RefreshRequest, db: Session = Depends(get_db)):
+    """
+    Refresh access and refresh tokens.
+    """
+    try:
+        data = decode_token(payload.refresh_token, expected_type="refresh")
+        user_uid = uuid.UUID(data["sub"])
+        tv = int(data.get("tv", -1))
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
+
+    user = db.execute(select(AccountUser).where(AccountUser.uid == user_uid)).scalar_one_or_none()
+    if not user or not user.is_active:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
+
+    if tv != user.token_version:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
+
+    access = create_access_token(subject=str(user.uid), role=str(user.role))
+    refresh = create_refresh_token(subject=str(user.uid), token_version=user.token_version)
+
+    return RefreshSuccess(tokens={"access_token": access, "refresh_token": refresh})
+
+
+@router.post("/logout")
+def logout(current_user: AccountUser = Depends(get_current_user), db: Session = Depends(get_db)):
+    """
+    Logout by invalidating existing refresh tokens.
+    """
+    current_user.token_version += 1
+    db.add(current_user)
+    db.commit()
+    return {"status": "ok"}
 
 @router.post("/verify/resend")
 def resend_verification(email: str, bg: BackgroundTasks, db: Session = Depends(get_db)):
@@ -149,6 +211,3 @@ def confirm_verification(token: str, db: Session = Depends(get_db)):
 
     return {"status": "verified"}
 
-@router.post("/hash", )
-def hash_password_endpoint(password: str):
-    return {"hashed": hash_password(password)}

@@ -7,6 +7,10 @@ from app.modules.alumni.schemas import AlumniCreate
 from app.modules.accounts.constants import UserRole
 from app.modules.accounts.schemas import UserMe
 
+class VerificationRequired(BaseModel):
+    status: Literal["verification_required"] = "Verification Required"
+
+
 ### REGISTRATION SCHEMAS ###
 class RegisterBase(BaseModel):
     email: EmailStr
@@ -27,7 +31,6 @@ RegisterRequest = Annotated[
     Field(discriminator="role"),
 ]
 
-
 class TokenPair(BaseModel):
     access_token: str
     refresh_token: str
@@ -38,15 +41,31 @@ class RegisterSuccess(BaseModel):
     user: UserMe
     tokens: TokenPair
 
-class RegisterNeedsVerification(BaseModel):
-    status: Literal["verification_required"] = "verification_required"
 
+RegisterResponse = Union[RegisterSuccess, VerificationRequired]
 
-RegisterResponse = Union[RegisterSuccess, RegisterNeedsVerification]
+### LOGIN SCHEMAS ###
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=8, max_length=255)
+
+class LoginSuccess(BaseModel):
+    status: Literal["login_successful"] = "Login Successful"
+
+class LoginNeedsVerification(BaseModel):
+    status: Literal["verification_required"] = "Verification Required"
+
+LoginResponse = Union[LoginSuccess, VerificationRequired]
+
+### REFRESH SCHEMA ###
+class RefreshRequest(BaseModel):
+    refresh_token: str
+
+class RefreshSuccess(BaseModel):
+    tokens: TokenPair
 
 ### OAUTH SCHEMAS ###
-OAuthProvider = Literal["google", "linkedin"]
-
+OAuthProvider = Literal["google", "linkedin", "apple"]
 
 class OAuthAuthorizeResponse(BaseModel):
     authorization_url: str

@@ -30,7 +30,7 @@ def get_current_user(
 ) -> AccountUser:
     try:
         payload = decode_token(token, expected_type="access")
-        user_uid = payload["sub"] 
+        user_uid = uuid.UUID(payload["sub"])
     except JWTError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
