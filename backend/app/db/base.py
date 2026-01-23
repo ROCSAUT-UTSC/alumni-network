@@ -2,7 +2,7 @@ from sqlmodel import SQLModel
 
 Base = SQLModel
 
-from app.models import (  # noqa
+from app.models import ( 
     user,
     student,
     alumni,
