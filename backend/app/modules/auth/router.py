@@ -112,6 +112,9 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(user)
 
+    access = create_access_token(subject=str(user.uid), role=str(user.role))
+    refresh = create_refresh_token(subject=str(user.uid), token_version=user.token_version)
+
     return LoginSuccess()
 
 @router.post("/refresh", response_model=RefreshSuccess)
