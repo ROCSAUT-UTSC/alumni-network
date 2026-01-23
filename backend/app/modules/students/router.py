@@ -1,14 +1,14 @@
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
-from app.modules.systems.deps import get_db, get_current_user, require_admin, DevUser
+from app.modules.auth.deps import get_db, get_current_user
 from sqlalchemy.orm import Session
-
+from app.models.user import AccountUser
 
 router = APIRouter(prefix="/students", tags=["students"])
 
 @router.get("/me", response_model=dict)
 def get_student_profile(
     db: Session = Depends(get_db),
-    user: DevUser = Depends(get_current_user), 
+    user: AccountUser = Depends(get_current_user), 
 ):
     """
     example:

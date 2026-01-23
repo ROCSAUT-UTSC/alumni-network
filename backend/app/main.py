@@ -3,8 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.modules.systems.config import get_settings
 from app.modules.systems.router import router as system_router
 from app.modules.students.router import router as student_router
-from app.modules.admins.router import router as admin_router
-from app.modules.alumnis.router import router as alumni_router
+from app.modules.admin.router import router as admin_router
+from app.modules.alumni.router import router as alumni_router
+from app.modules.auth.router import router as auth_router
 
 settings = get_settings()
 
@@ -18,10 +19,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(system_router)
-app.include_router(student_router)
-app.include_router(admin_router)
-app.include_router(alumni_router)
+app.include_router(system_router, prefix="/api")
+app.include_router(student_router, prefix="/api")
+app.include_router(auth_router, prefix="/api")
+app.include_router(admin_router, prefix="/api")
+app.include_router(alumni_router, prefix="/api")
 
 @app.get("/")
 def root():
