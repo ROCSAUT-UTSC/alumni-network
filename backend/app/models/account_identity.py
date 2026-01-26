@@ -8,7 +8,7 @@ from pydantic import EmailStr
 from sqlalchemy import UniqueConstraint
 from sqlmodel import Field, SQLModel
 
-from app.models.utils import utcnow
+from app.modules.systems.utils import utcnow
 
 
 class AccountIdentity(SQLModel, table=True):

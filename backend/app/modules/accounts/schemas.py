@@ -14,19 +14,17 @@ from app.modules.admin.schemas import AdminPublic
 class ORMBase(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-
+### Account Schemas ###
 class AccountCreate(BaseModel):
     email: EmailStr
     password: Optional[str] = Field(default=None, min_length=8, max_length=255)
     timezone: str = Field(default="America/Toronto", max_length=50)
-
 
 class AccountUpdate(BaseModel):
     timezone: Optional[str] = Field(default=None, max_length=50)
     is_active: Optional[bool] = None
     is_verified: Optional[bool] = None
     role: Optional[UserRole] = None
-
 
 class AccountPublic(ORMBase):
     uid: uuid.UUID
@@ -43,31 +41,32 @@ class AccountPublic(ORMBase):
 
     has_password: bool = False
 
-
 class AccountAdminPublic(AccountPublic):
     deleted_at: Optional[datetime] = None
     token_version: int = 0
 
-
+### Profile Schemas ###
 class StudentMe(AccountPublic):
     role: Literal[UserRole.STUDENT]
-    student_profile: StudentPublic
-
-
+    has_password: bool
+    has_profile: bool
+    student_profile: Optional[StudentPublic] = None
 class AlumniMe(AccountPublic):
     role: Literal[UserRole.ALUMNI]
-    alumni_profile: AlumniPublic
-
-
+    has_password: bool
+    has_profile: bool
+    alumni_profile: Optional[AlumniPublic] = None
 class AdminMe(AccountPublic):
     role: Literal[UserRole.ADMIN]
+    has_password: bool
+    has_profile: bool
     admin_profile: Optional[AdminPublic] = None
 
-
-UserMe = Annotated[Union[StudentMe, AlumniMe, AdminMe], Field(discriminator="role")]
-
-
-class AccountWithProfilesAdmin(AccountAdminPublic):
-    student_profile: Optional[StudentPublic] = None
-    alumni_profile: Optional[AlumniPublic] = None
-    admin_profile: Optional[AdminPublic] = None
+ProfileMe = Annotated[ Union[StudentMe, AlumniMe, AdminMe], Field(discriminator="role"),]
+class UserMe(BaseModel):
+    uid: uuid.UUID
+    email: EmailStr
+    role: UserRole
+    has_password: bool
+    has_profile: bool
+    profile: Optional[ProfileMe] = None

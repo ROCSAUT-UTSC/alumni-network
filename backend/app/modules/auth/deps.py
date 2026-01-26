@@ -6,6 +6,7 @@ from jose import JWTError
 from typing import Callable
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+import uuid
 
 from app.db.session import SessionLocal
 from app.models.user import AccountUser
@@ -30,7 +31,7 @@ def get_current_user(
 ) -> AccountUser:
     try:
         payload = decode_token(token, expected_type="access")
-        user_uid = payload["sub"] 
+        user_uid = uuid.UUID(payload["sub"])
     except JWTError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 

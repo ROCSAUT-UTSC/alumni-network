@@ -14,22 +14,36 @@ def _has_password(account) -> bool:
 
 def build_user_me(db: Session, account) -> UserMe:
     base = AccountPublic.model_validate(account).model_dump()
-    base["has_password"] = _has_password(account)
-
+    has_password = _has_password(account)
     role = account.role
 
     if role == UserRole.STUDENT:
         prof_obj = getattr(account, "student_profile", None) or (
             db.query(StudentProfile)
-            .filter(StudentProfile.account_uid == account.uid)
+            .filter(StudentProfile.uid == account.uid)
             .first()
         )
-        if not prof_obj:
-            raise HTTPException(status_code=500, detail="Student profile missing for account")
 
-        base["role"] = UserRole.STUDENT
-        base["student_profile"] = StudentPublic.model_validate(prof_obj)
-        return StudentMe(**base)
+        profile = (
+            StudentMe(
+                **base,
+                role=UserRole.STUDENT,
+                has_password=has_password,
+                has_profile=True,
+                student_profile=StudentPublic.model_validate(prof_obj),
+            )
+            if prof_obj
+            else None
+        )
+
+        return UserMe(
+            uid=account.uid,
+            email=account.email,
+            role=UserRole.STUDENT,
+            has_password=has_password,
+            has_profile=bool(prof_obj),
+            profile=profile,
+        )
 
     if role == UserRole.ALUMNI:
         prof_obj = getattr(account, "alumni_profile", None) or (
@@ -37,22 +51,46 @@ def build_user_me(db: Session, account) -> UserMe:
             .filter(AlumniProfile.uid == account.uid)
             .first()
         )
-        if not prof_obj:
-            raise HTTPException(status_code=500, detail="Alumni profile missing for account")
 
-        base["role"] = UserRole.ALUMNI
-        base["alumni_profile"] = AlumniPublic.model_validate(prof_obj)
-        return AlumniMe(**base)
-
-    if role == UserRole.ADMIN:
-        prof_obj = getattr(account, "admin_profile", None) or (
-            db.query(AdminProfile)
-            .filter(AdminProfile.uid == account.uid)
-            .first()
+        profile = (
+            AlumniMe(
+                **base,
+                role=UserRole.ALUMNI,
+                has_password=has_password,
+                has_profile=True,
+                alumni_profile=AlumniPublic.model_validate(prof_obj),
+            )
+            if prof_obj
+            else None
         )
 
-        base["role"] = UserRole.ADMIN
-        base["admin_profile"] = AdminPublic.model_validate(prof_obj) if prof_obj else None
-        return AdminMe(**base)
+        return UserMe(
+            uid=account.uid,
+            email=account.email,
+            role=UserRole.ALUMNI,
+            has_password=has_password,
+            has_profile=bool(prof_obj),
+            profile=profile,
+        )
+
+    if role == UserRole.ADMIN:
+        prof_obj = getattr(account, "admin_profile", None)
+
+        profile = AdminMe(
+            **base,
+            role=UserRole.ADMIN,
+            has_password=has_password,
+            has_profile=bool(prof_obj),
+            admin_profile=AdminPublic.model_validate(prof_obj) if prof_obj else None,
+        )
+
+        return UserMe(
+            uid=account.uid,
+            email=account.email,
+            role=UserRole.ADMIN,
+            has_password=has_password,
+            has_profile=True,
+            profile=profile,
+        )
 
     raise HTTPException(status_code=400, detail="Unsupported role")
