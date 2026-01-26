@@ -51,22 +51,28 @@ class AccountAdminPublic(AccountPublic):
 
 class StudentMe(AccountPublic):
     role: Literal[UserRole.STUDENT]
-    student_profile: StudentPublic
-
-
+    has_password: bool
+    has_profile: bool
+    student_profile: Optional[StudentPublic] = None
 class AlumniMe(AccountPublic):
     role: Literal[UserRole.ALUMNI]
-    alumni_profile: AlumniPublic
-
-
+    has_password: bool
+    has_profile: bool
+    alumni_profile: Optional[AlumniPublic] = None
 class AdminMe(AccountPublic):
     role: Literal[UserRole.ADMIN]
+    has_password: bool
+    has_profile: bool
     admin_profile: Optional[AdminPublic] = None
 
-
-UserMe = Annotated[Union[StudentMe, AlumniMe, AdminMe], Field(discriminator="role")]
-
-
+ProfileMe = Annotated[ Union[StudentMe, AlumniMe, AdminMe], Field(discriminator="role"),]
+class UserMe(BaseModel):
+    uid: uuid.UUID
+    email: EmailStr
+    role: UserRole
+    has_password: bool
+    has_profile: bool
+    profile: Optional[ProfileMe] = None
 class AccountWithProfilesAdmin(AccountAdminPublic):
     student_profile: Optional[StudentPublic] = None
     alumni_profile: Optional[AlumniPublic] = None

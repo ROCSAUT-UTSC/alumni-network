@@ -1,4 +1,5 @@
 import secrets
+import bcrypt
 import hashlib
 import hmac
 from jose import jwt, JWTError
@@ -10,15 +11,15 @@ from app.modules.systems.utils import utcnow
 from app.modules.systems.config import get_settings
 
 settings = get_settings()
-pwd_context = CryptContext(schemes=["bcrypt_sha256"], deprecated="auto")
 
 TokenType = Literal["access", "refresh", "verify"]
 
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
-
+    prehashed = hashlib.sha256(password.encode('utf-8')).digest()
+    return bcrypt.hashpw(prehashed, bcrypt.gensalt()).decode('utf-8')
 def verify_password(password: str, hashed: str) -> bool:
-    return pwd_context.verify(password, hashed)
+    prehashed = hashlib.sha256(password.encode('utf-8')).digest()
+    return bcrypt.checkpw(prehashed, hashed.encode('utf-8'))
 
 def _hash_jti(jti: str) -> str:
     return hmac.new(

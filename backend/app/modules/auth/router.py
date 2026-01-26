@@ -1,34 +1,31 @@
 import uuid
 from datetime import timezone
 from jose import JWTError
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy import select
 
-from app.modules.systems.utils import utcnow
-from app.models.user import AccountUser, StudentProfile, AlumniProfile
 
+from app.models.user import AccountUser
+from app.models.account_identity import AccountIdentity
+
+from app.modules.systems.utils import utcnow
 from app.modules.systems.email_service import send_verification_email
 from app.modules.auth.deps import *
 from app.modules.auth.schemas import *
 from app.modules.auth.security import *
+from app.modules.auth.oauth import create_oauth_state, get_provider_client, verify_oauth_state
 from app.modules.accounts.serivce import build_user_me
 from app.modules.accounts.constants import UserRole
+
 
 settings = get_settings()
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-VERIFY_RESEND_COOLDOWN_SECONDS = getattr(settings, "VERIFY_RESEND_COOLDOWN_SECONDS", 60)
 
-REQUIRE_VERIFY = True
-
-PROFILE_MODEL = {
-    UserRole.STUDENT: StudentProfile,
-    UserRole.ALUMNI: AlumniProfile,
-}
-
+### REGISTRATION, LOGIN, REFRESH, LOGOUT ROUTES ###
 @router.post("/register", response_model=RegisterResponse, status_code=status.HTTP_201_CREATED)
 def register(
     payload: RegisterRequest,
@@ -38,7 +35,7 @@ def register(
     """
     Register a new user.
     """
-    profile_role = PROFILE_MODEL.get(payload.role)
+    profile_role = settings.PROFILE_MODEL.get(payload.role)
     if not profile_role:
         raise HTTPException(status_code=400, detail="Unsupported role for register")
 
@@ -53,16 +50,14 @@ def register(
                 timezone=payload.timezone,
                 role=payload.role,
                 is_active=True,
-                is_verified=(not REQUIRE_VERIFY),
+                is_verified=(not settings.REQUIRE_VERIFY),
                 token_version=0,
             )
             db.add(account)
             db.flush()
 
-            db.add(profile_role(uid=account.uid, **payload.profile.model_dump()))
-
             # If verification is required
-            if REQUIRE_VERIFY:
+            if settings.REQUIRE_VERIFY:
                 token, jti_hash, exp = create_email_verify_token(subject=str(account.uid))
                 account.verify_jti_hash = jti_hash
                 account.verify_expires_at = exp
@@ -73,7 +68,7 @@ def register(
         raise HTTPException(status_code=409, detail="Email already registered")
 
     # Send email after successful commit
-    if REQUIRE_VERIFY:
+    if settings.REQUIRE_VERIFY:
         bg.add_task(send_verification_email, to_email=to_email, token=token)
         return VerificationRequired()
 
@@ -104,7 +99,7 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
     if not verify_password(payload.password, user.password_hash):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 
-    if REQUIRE_VERIFY and not user.is_verified:
+    if settings.REQUIRE_VERIFY and not user.is_verified:
         return VerificationRequired()
 
     user.last_login_at = utcnow()
@@ -115,7 +110,9 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
     access = create_access_token(subject=str(user.uid), role=str(user.role))
     refresh = create_refresh_token(subject=str(user.uid), token_version=user.token_version)
 
-    return LoginSuccess()
+    user_me = build_user_me(db, user)
+    needs_profile = user_me.profile is None
+    return LoginSuccess(needs_profile=needs_profile, tokens={"access_token": access, "refresh_token": refresh})
 
 @router.post("/refresh", response_model=RefreshSuccess)
 def refresh(payload: RefreshRequest, db: Session = Depends(get_db)):
@@ -152,6 +149,7 @@ def logout(current_user: AccountUser = Depends(get_current_user), db: Session = 
     db.commit()
     return {"status": "ok"}
 
+### EMAIL VERIFICATION ROUTES ###
 @router.post("/verify/resend")
 def resend_verification(email: str, bg: BackgroundTasks, db: Session = Depends(get_db)):
     """
@@ -164,9 +162,9 @@ def resend_verification(email: str, bg: BackgroundTasks, db: Session = Depends(g
 
     if user.last_activation_email_sent:
         seconds = (utcnow() - user.last_activation_email_sent).total_seconds()
-        if seconds < VERIFY_RESEND_COOLDOWN_SECONDS:
+        if seconds < settings.VERIFY_RESEND_COOLDOWN_SECONDS:
             return {"status": "ok"}
-
+    
     token, jti_hash, exp = create_email_verify_token(subject=str(user.uid))
     user.verify_jti_hash = jti_hash
     user.verify_expires_at = exp
@@ -214,3 +212,197 @@ def confirm_verification(token: str, db: Session = Depends(get_db)):
 
     return {"status": "verified"}
 
+### OAUTH ROUTES ###
+def _resolve_oauth_user(
+    *,
+    db: Session = Depends(get_db),
+    provider: str,
+    provider_sub: str,
+    email: str,
+    email_verified: bool,
+    role: Optional[UserRole] = None,
+) -> AccountUser:
+    """
+    Shared logic: link AccountIdentity -> AccountUser or create new user + profile.
+    """
+   # If identity already exist
+    identity = db.execute(
+        select(AccountIdentity).where(
+            AccountIdentity.provider == provider,
+            AccountIdentity.provider_sub == provider_sub,
+        )
+    ).scalar_one_or_none()
+
+    if identity:
+        user = db.execute(
+            select(AccountUser).where(AccountUser.uid == identity.user_uid)
+        ).scalar_one_or_none()
+        if not user or not user.is_active:
+            raise HTTPException(status_code=401, detail="Account is inactive")
+        return user
+
+    # If there is an existing user with this email
+    user = db.execute(
+        select(AccountUser).where(AccountUser.email == email)
+    ).scalar_one_or_none()
+
+    if user:
+        identity = AccountIdentity(
+            user_uid=user.uid,
+            provider=provider,
+            provider_sub=provider_sub,
+            provider_email=email,
+        )
+        db.add(identity)
+        db.commit()
+        db.refresh(user)
+        return user
+
+    print("Creating new OAuth user:", email)
+    # new user -> create AccountUser + profile
+    default_role = UserRole.STUDENT
+
+    user = AccountUser(
+        email=email,
+        password_hash=None,         
+        timezone="America/Toronto",   
+        role=role or default_role,
+        is_active=True,
+        is_verified=email_verified,  
+        token_version=0,
+    )
+    db.add(user)
+    db.commit()
+    db.flush()
+
+    return user
+
+@router.post("/oauth/authorize", response_model=OAuthAuthorizeResponse)
+def oauth_authorize(payload: OAuthAuthorizeRequest) -> OAuthAuthorizeResponse:
+    """
+    Start OAuth flow for a provider .
+    Backend:
+      - chooses redirect_uri based on FRONTEND_BASE_URL
+      - creates a signed, short-lived state token
+      - builds provider authorization URL
+    """
+    if payload.provider not in OAuthProvider.__args__:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unsupported provider",
+        )
+
+    client = get_provider_client(payload.provider)
+    settings = get_settings()
+    redirect_uri = settings.OAUTH_REDIRECT_URI
+
+    state = create_oauth_state(
+        provider=payload.provider,
+        redirect_uri=redirect_uri,
+    )
+
+    authorization_url = client.build_authorization_url(
+        redirect_uri=redirect_uri,
+        state=state,
+    )
+
+    return OAuthAuthorizeResponse(
+        authorization_url=authorization_url,
+        provider=payload.provider,
+        state=state,
+    )
+
+
+@router.post("/oauth/exchange", response_model=OAuthLoginSuccess)
+def oauth_exchange(
+    payload: OAuthExchangeRequest,
+    db: Session = Depends(get_db),
+) -> OAuthLoginSuccess:
+    """
+    Exchange the authorization code for provider tokens + profile, then:
+      - resolve/link/create AccountUser & profile
+      - issue your normal JWT access/refresh tokens.
+    """
+    if payload.provider not in OAuthProvider.__args__:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unsupported provider",
+        )
+
+    client = get_provider_client(payload.provider)
+    settings = get_settings()
+    redirect_uri = settings.OAUTH_REDIRECT_URI
+
+    if not payload.code:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing code")
+
+    if not payload.state:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing state")
+
+    try:
+        state_payload = verify_oauth_state(
+            state=payload.state,
+            expected_provider=payload.provider,
+            redirect_uri=redirect_uri,
+        )
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid state")
+
+    try:
+        tokens = client.exchange_code(
+            code=payload.code,
+            redirect_uri=redirect_uri,
+            code_verifier=payload.code_verifier,
+        )
+    except Exception as e:
+        print("Non-HTTP OAuth exchange error:", repr(e))
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Failed to exchange code with provider",
+        )
+    try:
+        profile = client.fetch_profile(tokens=tokens)
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Failed to fetch user info from provider",
+        )
+    
+    # Resolve/link/create AccountUser & profile
+    if payload.provider == "google":
+        provider_sub = profile.get("sub")
+        email = profile.get("email")
+        email_verified = profile.get("email_verified", False)
+    else:
+        provider_sub = profile.get("id") or profile.get("sub")
+        email = profile.get("email")
+        email_verified = True
+
+    if not provider_sub or not email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Provider did not return id or email",
+        )
+
+    user = _resolve_oauth_user(
+        db=db,
+        provider=payload.provider,
+        provider_sub=provider_sub,
+        email=email,
+        email_verified=email_verified,
+        role=payload.role,
+    )
+
+    if not user.is_active:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Account is inactive")
+
+    access = create_access_token(subject=str(user.uid), role=str(user.role))
+    refresh = create_refresh_token(subject=str(user.uid), token_version=user.token_version)
+
+    user_me = build_user_me(db, user)
+    needs_profile = user_me.profile is None
+
+    return OAuthLoginSuccess(
+        tokens={"access_token": access, "refresh_token": refresh},
+        needs_profile=needs_profile,
+    )
