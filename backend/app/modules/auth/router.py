@@ -24,6 +24,16 @@ from app.modules.accounts.constants import UserRole
 settings = get_settings()
 router = APIRouter(prefix="/auth", tags=["auth"])
 
+### GET CURRENT USER ROUTE ###
+@router.get("/me", response_model=UserMe)
+def get_me(
+    db: Session = Depends(get_db),
+    current_user: AccountUser = Depends(get_current_user),
+):
+    """
+    Get current logged-in user info.
+    """
+    return build_user_me(db, current_user)
 
 ### REGISTRATION, LOGIN, REFRESH, LOGOUT ROUTES ###
 @router.post("/register", response_model=RegisterResponse, status_code=status.HTTP_201_CREATED)
