@@ -6,6 +6,7 @@ from jose import JWTError
 from typing import Callable
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+import uuid
 
 from app.db.session import SessionLocal
 from app.models.user import AccountUser
