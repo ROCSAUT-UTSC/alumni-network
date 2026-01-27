@@ -14,6 +14,17 @@ from app.modules.systems.utils import utcnow
 
 router = APIRouter(prefix="/alumni", tags=["alumni"])
 
+fake_uid = uuid.UUID("5e15150e-632b-41cd-a497-6a89550ffa91")
+fake_user = AccountUser(
+        uid=fake_uid,
+        email="user456@example.com",
+        role=UserRole.ALUMNI,
+        is_active=True,
+        is_verified=True,
+        created_at=utcnow(),
+        updated_at=utcnow(),
+    )
+
 def _is_alumni(account: AccountUser) -> None:
     if account.role != UserRole.ALUMNI:
         raise HTTPException(
@@ -39,13 +50,12 @@ def _get_alumni_profile(db: Session, user_uid: uuid.UUID) -> AlumniProfile:
 def create_alumni_profile(
     payload: AlumniCreate,
     db: Session = Depends(get_db),
-    user: AccountUser = Depends(get_current_user),
+    user: AccountUser = fake_user,#AccountUser = Depends(get_current_user),
 ) -> AlumniPublic:
     """
     Create the current users's alumni profile.
     """
     _is_alumni(user)
-
     existing = (
         db.query(AlumniProfile)
         .filter(AlumniProfile.uid == user.uid)
