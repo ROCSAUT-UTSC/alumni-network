@@ -52,7 +52,6 @@ class StudentProfile(SQLModel, table=True):
 
     first_name: str = Field(min_length=1, max_length=100, index=True)
     last_name: str = Field(min_length=1, max_length=100, index=True)
-    preferred_name: Optional[str] = Field(default=None, max_length=100)
     pronouns: Optional[str] = Field(default=None, max_length=50)
 
     avatar_key: Optional[str] = Field(default=None, max_length=512)
@@ -84,6 +83,7 @@ class AlumniProfile(SQLModel, table=True):
 
     first_name: str = Field(min_length=1, max_length=100, index=True)
     last_name: str = Field(min_length=1, max_length=100, index=True)
+    preferred_name: Optional[str] = Field(default=None, max_length=100)
     pronouns: Optional[str] = Field(default=None, max_length=50)
     
     avatar_key: Optional[str] = Field(default=None, max_length=512)
