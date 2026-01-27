@@ -9,6 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 class AlumniBase(BaseModel):
     first_name: str = Field(min_length=1, max_length=100)
     last_name: str = Field(min_length=1, max_length=100)
+    preferred_name: Optional[str] = Field(default=None, max_length=100)
 
     pronouns: Optional[str] = Field(default=None, max_length=50)
     industry: str = Field(min_length=1, max_length=120)
@@ -36,7 +37,8 @@ class AlumniCreate(AlumniBase):
 class AlumniUpdate(BaseModel):
     first_name: Optional[str] = Field(default=None, min_length=1, max_length=100)
     last_name: Optional[str] = Field(default=None, min_length=1, max_length=100)
-
+    preferred_name: Optional[str] = Field(default=None, max_length=100)
+    
     pronouns: Optional[str] = Field(default=None, max_length=50)
     industry: Optional[str] = Field(default=None, min_length=1, max_length=120)
 
