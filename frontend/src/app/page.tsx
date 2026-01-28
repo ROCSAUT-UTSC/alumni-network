@@ -22,7 +22,7 @@ export default function HomePage() {
       <Title text="Alumni Directory"/>
       <Card
         name="Name"
-        occupation="Occupation"
+        occupation="Industry"
         gradYear={2025}
         location="Location"
         tags={["Tag 1", "Tag 2", "Tag 3"]}

@@ -24,54 +24,55 @@ export default function AlumniCard({
   const shownTags = tags.slice(0, 3);
 
   return (
-    <section className="relative box-border flex h-[330px] w-[395px] flex-col overflow-hidden rounded-[24px] border-2 border-[#774c3d] bg-[#fafaf5] pb-[10px]">
+    <section
+      className="relative flex w-full max-w-[25rem] flex-col aspect-[395/330] overflow-hidden rounded-[1.5rem] border-2 border-[#774c3d] bg-[#fafaf5] pb-2"
+    >
       {/* Top image area */}
-     <div className="relative flex items-start justify-center overflow-hidden pt-[16px]">
+      <div className="relative flex items-start justify-center overflow-hidden pt-4">
         <button
-            type="button"
-            onClick={onConnect}
-            className="absolute right-[14px] top-[14px] z-[10] rounded-[999px] border border-[#774c3d] bg-transparent px-[18px] py-[10px] text-[16px] font-[600] text-[#007a97] hover:bg-[#6d6d6d]/15 transition-colors"
+          type="button"
+          onClick={onConnect}
+          className="absolute right-3 top-3 z-10 rounded-full border border-[#774c3d] bg-transparent px-4 py-2 text-sm sm:text-base font-semibold text-[#007a97] transition-colors hover:bg-[#6d6d6d]/30"
         >
-            Connect
+          Connect
         </button>
 
         <Image
-            src={imageUrl ?? "/profile_icon.png"}
-            alt={`${name} profile`}
-            width={280}
-            height={280}
-            className="h-auto w-[280px]"
+          src={imageUrl ?? "/profile_icon.png"}
+          alt={`${name} profile`}
+          width={280}
+          height={280}
+          className="w-[65%] max-w-[18rem] h-auto"
+          priority
         />
-    </div>
-
+      </div>
 
       {/* Bottom info */}
-      <div className="grid grid-cols-2 gap-[10px] px-[18px] pb-[10px] pt-[8px]">
+      <div className="grid grid-cols-2 gap-2 px-4 sm:px-5 pt-2 pb-2">
         <div className="text-left">
-          <p className="m-0 text-[20px] font-[600] text-[#e7ddd6]">{name}</p>
-          <p className="mt-[6px] text-[16px] font-[400] text-[#6d6d6d]">
+          <p className="m-0 text-base sm:text-lg font-semibold text-[#4c4f69]">
+            {name}
+          </p>
+          <p className="mt-1 text-sm sm:text-base font-normal text-[#6d6d6d]">
             {occupation}
           </p>
         </div>
 
         <div className="text-right">
-          <p className="m-0 text-[20px] font-[600] text-[#774c3d]">
-            Class of {gradYear}
-          </p>
-          <p className="mt-[6px] text-[16px] font-[400] text-[#6d6d6d]">
+          <p className="mt-1 text-sm sm:text-base font-normal text-[#6d6d6d]">
             {location}
           </p>
         </div>
       </div>
 
       {/* Tags */}
-      <div className="flex justify-between gap-[23px] px-[18px] pt-[14px]">
+      <div className="mt-auto flex justify-between gap-3 px-4 sm:px-5 pt-3">
         {shownTags.map((tag, idx) => (
           <button
             key={`${tag}-${idx}`}
             type="button"
             onClick={() => onTagClick?.(tag)}
-            className="h-[38px] w-[103px] cursor-pointer rounded-[999px] bg-[#6CB7C9] text-[16px] font-[600] text-white hover:brightness-[0.98]"
+            className="flex-1 min-w-0 rounded-full bg-[#6CB7C9] py-2 text-sm sm:text-base font-semibold text-white transition hover:brightness-95"
           >
             {tag}
           </button>
