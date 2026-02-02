@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from typing import Optional, Iterable, Dict, Any
 from app.modules.auth.deps import get_db, get_current_user
 from sqlalchemy.orm import Session
-from app.models.user import AccountUser
 from app.models.user import AccountUser, StudentProfile
 from app.modules.accounts.constants import UserRole
 from app.modules.students.schemas import *
@@ -13,7 +13,7 @@ fake_uid = uuid.UUID("5e15150e-632b-41cd-a497-6a89550ffa91")
 fake_user = AccountUser(
         uid=fake_uid,
         email="user456@example.com",
-        role=UserRole.ALUMNI,
+        role=UserRole.STUDENT,
         is_active=True,
         is_verified=True,
         created_at=utcnow(),
@@ -27,9 +27,21 @@ def _is_student(account: AccountUser) -> None:
             detail="Only student accounts can access this resource.",
         )
 
-@router.get("/me", response_model=dict)
+def _get_student_profile(db: Session, user_uid: uuid.UUID) -> StudentProfile:
+    profile: Optional[StudentProfile] = (
+        db.query(StudentProfile)
+        .filter(StudentProfile.uid == user_uid)
+        .first()
+    )
+    if not profile:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Student profile not found.",
+        )
+    return profile
 
 #------------------------------------------------------------------------------------------
+@router.get("/me", response_model=StudentPublic)
 def get_student_profile(
     db: Session = Depends(get_db),
     user: AccountUser = Depends(get_current_user), 
@@ -41,7 +53,7 @@ def get_student_profile(
     """
     _is_student(user)
 
-    profile = user.student_profile
+    profile = _get_student_profile(db, user.uid)
 
     if not profile:
         raise HTTPException(
@@ -79,3 +91,61 @@ def create_student_profile(
     db.refresh(profile)
 
     return profile
+
+@router.patch("/me", response_model=StudentPublic)
+def update_student(
+    payload: StudentUpdate,
+    db: Session = Depends(get_db),
+     user: AccountUser = fake_user, #AccountUser = Depends(get_current_user),
+) -> StudentPublic:
+    """
+    Partially update the current alumni's profile.
+    """
+    #Test
+    _is_student(user)
+
+    profile = _get_student_profile(db, user.uid)
+
+    update_data = payload.model_dump(exclude_unset=True)
+
+    image_url = update_data.pop("image_url", None)
+    if image_url is not None:
+        update_data["avatar_url"] = image_url
+
+    for field, value in update_data.items():
+        setattr(profile, field, value)
+
+
+    db.add(profile)
+    db.commit()
+    db.refresh(profile)
+
+    return profile
+
+@router.get("/{uid}", response_model=StudentPublic)
+def get_student_by_id(
+    uid: uuid.UUID,
+    db: Session = Depends(get_db),
+) -> StudentPublic:
+    """
+    Fetch an alumni profile by UID.
+    """
+    profile = _get_student_profile(db, uid)
+    return profile
+
+@router.get("/all", response_model=Iterable[StudentPublic])
+def get_all_alumni(
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+) -> Iterable[StudentProfile]:
+    """
+    Get all alumni profiles.
+    """
+    profiles = (
+        db.query(StudentProfile)
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+    return profiles
