@@ -9,17 +9,6 @@ from app.modules.systems.utils import utcnow
 
 router = APIRouter(prefix="/students", tags=["students"])
 
-fake_uid = uuid.UUID("5e15150e-632b-41cd-a497-6a89550ffa91")
-fake_user = AccountUser(
-        uid=fake_uid,
-        email="user456@example.com",
-        role=UserRole.STUDENT,
-        is_active=True,
-        is_verified=True,
-        created_at=utcnow(),
-        updated_at=utcnow(),
-    )
-
 def _is_student(account: AccountUser) -> None:
     if account.role != UserRole.STUDENT:
         raise HTTPException(
@@ -67,10 +56,10 @@ def get_student_profile(
 def create_student_profile(
     payload: StudentCreate,
     db: Session = Depends(get_db),
-    user: AccountUser = fake_user, #AccountUser = Depends(get_current_user),
+    user: AccountUser = Depends(get_current_user),
 ) -> StudentPublic:
     """
-    Create the current users's alumni profile.
+    Create the current users's student profile.
     """
     _is_student(user)
     existing = user.student_profile
@@ -96,12 +85,11 @@ def create_student_profile(
 def update_student(
     payload: StudentUpdate,
     db: Session = Depends(get_db),
-     user: AccountUser = fake_user, #AccountUser = Depends(get_current_user),
+     user: AccountUser = Depends(get_current_user),
 ) -> StudentPublic:
     """
-    Partially update the current alumni's profile.
+    Partially update the current student's profile.
     """
-    #Test
     _is_student(user)
 
     profile = _get_student_profile(db, user.uid)
@@ -128,19 +116,19 @@ def get_student_by_id(
     db: Session = Depends(get_db),
 ) -> StudentPublic:
     """
-    Fetch an alumni profile by UID.
+    Fetch a student profile by UID.
     """
     profile = _get_student_profile(db, uid)
     return profile
 
 @router.get("/all", response_model=Iterable[StudentPublic])
-def get_all_alumni(
+def get_all_students(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
 ) -> Iterable[StudentProfile]:
     """
-    Get all alumni profiles.
+    Get all student profiles.
     """
     profiles = (
         db.query(StudentProfile)
