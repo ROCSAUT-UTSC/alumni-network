@@ -3,9 +3,8 @@ from typing import Optional, Iterable, Dict, Any
 from app.modules.auth.deps import get_db, get_current_user
 from sqlalchemy.orm import Session
 from app.models.user import AccountUser, StudentProfile
-from app.modules.accounts.constants import UserRole
 from app.modules.students.schemas import *
-from app.modules.systems.utils import utcnow
+from app.modules.accounts.constants import UserRole
 
 router = APIRouter(prefix="/students", tags=["students"])
 
@@ -34,7 +33,7 @@ def _get_student_profile(db: Session, user_uid: uuid.UUID) -> StudentProfile:
 def get_student_profile(
     db: Session = Depends(get_db),
     user: AccountUser = Depends(get_current_user), 
-):
+) -> StudentPublic:
     """
     example:
     - Auth is enforced via get_current_user()
