@@ -11,7 +11,6 @@ class StudentBase(BaseModel):
     first_name: str = Field(min_length=1, max_length=100)
     last_name: str = Field(min_length=1, max_length=100)
 
-    preferred_name: Optional[str] = Field(default=None, max_length=100)
     pronouns: Optional[str] = Field(default=None, max_length=50)
 
     school_email: EmailStr
@@ -36,8 +35,7 @@ class StudentCreate(StudentBase):
 class StudentUpdate(BaseModel):
     first_name: Optional[str] = Field(default=None, min_length=1, max_length=100)
     last_name: Optional[str] = Field(default=None, min_length=1, max_length=100)
-
-    preferred_name: Optional[str] = Field(default=None, max_length=100)
+    
     pronouns: Optional[str] = Field(default=None, max_length=50)
 
     school_email: Optional[EmailStr] = None
