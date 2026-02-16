@@ -1,11 +1,12 @@
 import uuid
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 from pydantic import EmailStr
 from sqlmodel import Field, SQLModel, Relationship
-from sqlalchemy import Column
+from sqlalchemy import Column, Text
 from sqlalchemy import Enum as SAEnum
+from sqlalchemy.dialects.postgresql import ARRAY
 
 from app.modules.accounts.constants import UserRole
 from app.modules.systems.utils import utcnow
@@ -63,12 +64,18 @@ class StudentProfile(SQLModel, table=True):
     university: Optional[str] = Field(default=None, max_length=150)
     school_email: EmailStr = Field(unique=True, index=True, max_length=255)
 
-    alumni_to_be: Optional[bool] = Field(default=None)
     bio: Optional[str] = Field(default=None, max_length=500)
+    location: Optional[str] = Field(default=None, max_length=120)
 
     linkedin: Optional[str] = Field(default=None, max_length=300)
     personal_website: Optional[str] = Field(default=None, max_length=300)
 
+    skills: Optional[List[str]] = Field(
+        default=None,
+        sa_column=Column(ARRAY(Text))
+    )
+
+    alumni_to_be: Optional[bool] = Field(default=None)
     promoted_to_alumni_at: Optional[datetime] = Field(default=None, index=True)
 
     account: "AccountUser" = Relationship(back_populates="student_profile")
@@ -104,6 +111,11 @@ class AlumniProfile(SQLModel, table=True):
     linkedin: Optional[str] = Field(default=None, max_length=300)
     personal_website: Optional[str] = Field(default=None, max_length=300)
     company_website: Optional[str] = Field(default=None, max_length=300)
+
+    skills: Optional[List[str]] = Field(
+        default=None,
+        sa_column=Column(ARRAY(Text))
+    )
 
     account: "AccountUser" = Relationship(back_populates="alumni_profile")
 
