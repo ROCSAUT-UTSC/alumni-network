@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Optional, Dict, Literal
+from typing import Optional, Dict, Literal, List
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -28,7 +28,8 @@ class AlumniBase(BaseModel):
     linkedin: Optional[str] = Field(default=None, max_length=300)
     personal_website: Optional[str] = Field(default=None, max_length=300)
     company_website: Optional[str] = Field(default=None, max_length=300)
-
+    
+    skills: Optional[List[str]] = Field(default=None, max_length=50)
 
 class AlumniCreate(AlumniBase):
     pass
@@ -48,7 +49,6 @@ class AlumniUpdate(BaseModel):
 
     work_duration_months: Optional[int] = Field(default=None, ge=0, le=60 * 12)
     academic_history: Optional[str] = Field(default=None, max_length=500)
-    image_url: Optional[str] = Field(default=None, max_length=300)
 
     graduated_from: Optional[str] = Field(default=None, max_length=150)
     graduated_at_year: Optional[int] = Field(default=None, ge=1900, le=2100)
@@ -56,7 +56,8 @@ class AlumniUpdate(BaseModel):
     linkedin: Optional[str] = Field(default=None, max_length=300)
     personal_website: Optional[str] = Field(default=None, max_length=300)
     company_website: Optional[str] = Field(default=None, max_length=300)
-
+    
+    skills: Optional[List[str]] = Field(default=None, max_length=50)
 
 class AlumniPublic(AlumniBase):
     model_config = ConfigDict(from_attributes=True)
