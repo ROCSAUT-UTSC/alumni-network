@@ -65,31 +65,3 @@ class StudentPublic(StudentBase):
     uid: uuid.UUID
     promoted_to_alumni_at: Optional[datetime] = None
     avatar_updated_at: Optional[datetime] = None
-
-
-class StudentAvatarUploadInitRequest(BaseModel):
-    filename: str = Field(min_length=1, max_length=255)
-    content_type: str = Field(min_length=3, max_length=100)  # "image/png", "image/jpeg"
-    file_size: int = Field(ge=1, le=10 * 1024 * 1024)        # 10MB max
-
-
-class StudentAvatarUploadInitResponse(BaseModel):
-    """
-    For presigned PUT uploads:
-    - client uploads bytes to upload_url with headers (if any)
-    - then calls confirm with the returned key
-    """
-    upload_url: str
-    method: Literal["PUT"] = "PUT"
-    headers: Dict[str, str] = Field(default_factory=dict)
-
-    key: str
-    expires_in: int
-
-
-class StudentAvatarConfirmRequest(BaseModel):
-    key: str = Field(min_length=1, max_length=512)
-
-
-class StudentAvatarRemoveResponse(BaseModel):
-    ok: bool = True
