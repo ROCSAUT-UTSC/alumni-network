@@ -1,22 +1,25 @@
+from __future__ import annotations
+
 import uuid
+
 from datetime import timezone
 from jose import JWTError
-from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks, Request, Query
+from fastapi.responses import RedirectResponse
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy import select
+from urllib.parse import urlencode
 
 
 from app.models.user import AccountUser
-from app.models.account_identity import AccountIdentity
 
 from app.modules.systems.utils import utcnow
 from app.modules.systems.email_service import send_verification_email
 from app.modules.auth.deps import *
 from app.modules.auth.schemas import *
 from app.modules.auth.security import *
-from app.modules.auth.oauth import create_oauth_state, get_provider_client, verify_oauth_state
+from app.modules.auth.oauth import create_oauth_state, get_provider_client, resolve_oauth_user, verify_oauth_state
 from app.modules.accounts.serivce import build_user_me
 from app.modules.accounts.constants import UserRole
 
@@ -223,196 +226,137 @@ def confirm_verification(token: str, db: Session = Depends(get_db)):
     return {"status": "verified"}
 
 ### OAUTH ROUTES ###
-def _resolve_oauth_user(
-    *,
-    db: Session = Depends(get_db),
-    provider: str,
-    provider_sub: str,
-    email: str,
-    email_verified: bool,
-    role: Optional[UserRole] = None,
-) -> AccountUser:
+@router.get("/oauth/google/start")
+def google_oauth_start(
+    role: UserRole = Query(UserRole.STUDENT),
+):
     """
-    Shared logic: link AccountIdentity -> AccountUser or create new user + profile.
+    Start Google OAuth flow.
+
+    - Frontend hits this with a simple link: /api/auth/oauth/google/start?role=student|alumni
+    - We create a signed state token (with provider + redirect_uri + role)
+    - We build Google authorization URL and redirect the browser there.
     """
-   # If identity already exist
-    identity = db.execute(
-        select(AccountIdentity).where(
-            AccountIdentity.provider == provider,
-            AccountIdentity.provider_sub == provider_sub,
-        )
-    ).scalar_one_or_none()
-
-    if identity:
-        user = db.execute(
-            select(AccountUser).where(AccountUser.uid == identity.user_uid)
-        ).scalar_one_or_none()
-        if not user or not user.is_active:
-            raise HTTPException(status_code=401, detail="Account is inactive")
-        return user
-
-    # If there is an existing user with this email
-    user = db.execute(
-        select(AccountUser).where(AccountUser.email == email)
-    ).scalar_one_or_none()
-
-    if user:
-        identity = AccountIdentity(
-            user_uid=user.uid,
-            provider=provider,
-            provider_sub=provider_sub,
-            provider_email=email,
-        )
-        db.add(identity)
-        db.commit()
-        db.refresh(user)
-        return user
-
-    print("Creating new OAuth user:", email)
-    # new user -> create AccountUser + profile
-    default_role = UserRole.STUDENT
-
-    user = AccountUser(
-        email=email,
-        password_hash=None,         
-        timezone="America/Toronto",   
-        role=role or default_role,
-        is_active=True,
-        is_verified=email_verified,  
-        token_version=0,
-    )
-    db.add(user)
-    db.commit()
-    db.flush()
-
-    return user
-
-@router.post("/oauth/authorize", response_model=OAuthAuthorizeResponse)
-def oauth_authorize(payload: OAuthAuthorizeRequest) -> OAuthAuthorizeResponse:
-    """
-    Start OAuth flow for a provider .
-    Backend:
-      - chooses redirect_uri based on FRONTEND_BASE_URL
-      - creates a signed, short-lived state token
-      - builds provider authorization URL
-    """
-    if payload.provider not in OAuthProvider.__args__:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Unsupported provider",
-        )
-
-    client = get_provider_client(payload.provider)
-    settings = get_settings()
-    redirect_uri = settings.OAUTH_REDIRECT_URI
+    allowed_roles = {UserRole.STUDENT, UserRole.ALUMNI}
+    if role not in allowed_roles:
+        role = UserRole.STUDENT
 
     state = create_oauth_state(
-        provider=payload.provider,
-        redirect_uri=redirect_uri,
+        provider="google",               
+        redirect_uri= settings.OAUTH_REDIRECT_URI,
+        role=str(role),                  
     )
 
+    client = get_provider_client("google")
     authorization_url = client.build_authorization_url(
-        redirect_uri=redirect_uri,
+        redirect_uri=settings.OAUTH_REDIRECT_URI,
         state=state,
     )
 
-    return OAuthAuthorizeResponse(
-        authorization_url=authorization_url,
-        provider=payload.provider,
-        state=state,
+    return RedirectResponse(
+        url=authorization_url,
+        status_code=status.HTTP_307_TEMPORARY_REDIRECT,
     )
 
-
-@router.post("/oauth/exchange", response_model=OAuthLoginSuccess)
-def oauth_exchange(
-    payload: OAuthExchangeRequest,
+@router.get("/oauth/google/callback")
+async def google_oauth_callback(
+    request: Request,
     db: Session = Depends(get_db),
-) -> OAuthLoginSuccess:
+):
     """
-    Exchange the authorization code for provider tokens + profile, then:
-      - resolve/link/create AccountUser & profile
-      - issue your normal JWT access/refresh tokens.
+    Google OAuth callback.
+
+    - Google redirects here with `code` and `state`.
+    - We validate `state`, exchange code for tokens, fetch profile.
+    - We resolve/create AccountUser via `resolve_oauth_user`.
+    - We issue our own JWTs and redirect to frontend with a `needs_profile` hint.
     """
-    if payload.provider not in OAuthProvider.__args__:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Unsupported provider",
-        )
 
-    client = get_provider_client(payload.provider)
-    settings = get_settings()
-    redirect_uri = settings.OAUTH_REDIRECT_URI
+    code = request.query_params.get("code")
+    state = request.query_params.get("state")
 
-    if not payload.code:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing code")
-
-    if not payload.state:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing state")
+    if not code or not state:
+        raise HTTPException(status_code=400, detail="Missing code or state")
 
     try:
         state_payload = verify_oauth_state(
-            state=payload.state,
-            expected_provider=payload.provider,
-            redirect_uri=redirect_uri,
+            state=state,
+            expected_provider="google",                # <- same literal
+            redirect_uri=settings.OAUTH_REDIRECT_URI,  # MUST match create_oauth_state + Google console
         )
-    except Exception:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid state")
-
-    try:
-        tokens = client.exchange_code(
-            code=payload.code,
-            redirect_uri=redirect_uri,
-            code_verifier=payload.code_verifier,
-        )
-    except Exception as e:
-        print("Non-HTTP OAuth exchange error:", repr(e))
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Failed to exchange code with provider",
-        )
-    try:
-        profile = client.fetch_profile(tokens=tokens)
-    except Exception:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Failed to fetch user info from provider",
-        )
+    except JWTError:
+        raise HTTPException(status_code=400, detail="Invalid OAuth state")
     
-    # Resolve/link/create AccountUser & profile
-    if payload.provider == "google":
-        provider_sub = profile.get("sub")
-        email = profile.get("email")
-        email_verified = profile.get("email_verified", False)
+    role_str = state_payload.get("role")
+    if role_str == str(UserRole.ALUMNI):
+        desired_role = UserRole.ALUMNI
     else:
-        provider_sub = profile.get("id") or profile.get("sub")
-        email = profile.get("email")
-        email_verified = True
+        desired_role = UserRole.STUDENT
 
-    if not provider_sub or not email:
+    # Exchange code for Google tokens + fetch profile
+    client = get_provider_client("google")
+    tokens = client.exchange_code(
+        code=code,
+        redirect_uri=settings.OAUTH_REDIRECT_URI,
+        code_verifier=None,  # if you add PKCE later, you’ll pass it here
+    )
+    profile = client.fetch_profile(tokens=tokens)
+
+    email = profile.get("email")
+    email_verified = profile.get("email_verified", False)
+    sub = profile.get("sub")  # Google's user id
+
+    if not email or not sub:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Provider did not return id or email",
+            status_code=400,
+            detail="Google userinfo missing email or sub",
         )
 
-    user = _resolve_oauth_user(
+    # Resolve or create AccountUser
+    user = resolve_oauth_user(
         db=db,
-        provider=payload.provider,
-        provider_sub=provider_sub,
+        provider="google",      
+        provider_sub=sub,
         email=email,
         email_verified=email_verified,
-        role=payload.role,
+        role=desired_role,
     )
 
-    if not user.is_active:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Account is inactive")
-
+    # Issue tokens
     access = create_access_token(subject=str(user.uid), role=str(user.role))
-    refresh = create_refresh_token(subject=str(user.uid), token_version=user.token_version)
-
-    user_me = build_user_me(db, user)
-    needs_profile = user_me.profile is None
-
-    return OAuthLoginSuccess(
-        tokens={"access_token": access, "refresh_token": refresh},
-        needs_profile=needs_profile,
+    refresh = create_refresh_token(
+        subject=str(user.uid),
+        token_version=user.token_version,
     )
+
+    # Decide if they need to create a profile
+    user_me = build_user_me(db, user)
+    needs_profile = not getattr(user_me, "has_profile", False)
+
+    params = {"needs_profile": "1" if needs_profile else "0"}
+    redirect_target = f"{settings.FRONTEND_URL}/oauth/done?{urlencode(params)}"
+
+    resp = RedirectResponse(
+        redirect_target,
+        status_code=status.HTTP_307_TEMPORARY_REDIRECT,
+    )
+    resp.set_cookie(
+        key="access_token",
+        value=access,
+        httponly=True,
+        secure=True,
+        samesite="lax",
+        path="/",
+        max_age=3600,
+    )
+    resp.set_cookie(
+        key="refresh_token",
+        value=refresh,
+        httponly=True,
+        secure=True,
+        samesite="lax",
+        path="/",
+        max_age=30 * 24 * 3600,
+    )
+
+    return resp

@@ -34,11 +34,12 @@ class Settings:
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
 
     # OAuth
-    OAUTH_REDIRECT_URI: str = "http://localhost:3000/oauth/callback"
+    OAUTH_REDIRECT_URI: str = os.environ["BACKEND_URL"] + "/api/auth/oauth/google/callback"
     OAUTH_STATE_TTL_SECONDS : int = 600
     GOOGLE_CLIENT_ID: str = os.environ["GOOGLE_CLIENT_ID"]
     GOOGLE_CLIENT_SECRET: str = os.environ["GOOGLE_CLIENT_SECRET"]
     GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
+    GOOGLE_SCOPE = "openid email profile"
     GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
     GOOGLE_USERINFO_URL = "https://openidconnect.googleapis.com/v1/userinfo"
 
