@@ -6,6 +6,7 @@ from datetime import timezone
 from jose import JWTError
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks, Request, Query
 from fastapi.responses import RedirectResponse
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from sqlalchemy import select
@@ -95,11 +96,18 @@ def register(
     )
 
 @router.post("/login", response_model=LoginResponse)
-def login(payload: LoginRequest, db: Session = Depends(get_db)):
+def login( form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     """
-    Login with email and password.
+    Login with **email and password**.
+
+    Swagger / OAuth2 will send:
+        username = email
+        password = password
     """
-    user = db.execute(select(AccountUser).where(AccountUser.email == payload.email)).scalar_one_or_none()
+    email = form_data.username
+    password = form_data.password
+
+    user = db.execute(select(AccountUser).where(AccountUser.email == email)).scalar_one_or_none()
     if not user or not user.is_active:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 
@@ -109,7 +117,7 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
             detail="This account uses OAuth. Please sign in with Google/LinkedIn.",
         )
 
-    if not verify_password(payload.password, user.password_hash):
+    if not verify_password(password, user.password_hash):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 
     if settings.REQUIRE_VERIFY and not user.is_verified:
