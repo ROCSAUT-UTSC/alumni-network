@@ -1,5 +1,10 @@
-from sqlalchemy.orm import declarative_base
+from sqlmodel import SQLModel
 
-Base = declarative_base()
+Base = SQLModel
 
-from app.models import user 
+from app.models import ( 
+    user,
+    account_identity,
+    refresh_session,
+)
+

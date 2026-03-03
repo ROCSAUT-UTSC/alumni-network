@@ -4,17 +4,17 @@ import { useEffect, useState } from "react";
 import Card from "@/components/AlumniCard";
 import Title from "@/components/Title";
 import MessageBox from "@/components/MessageBox";
+
 import Header from "@/components/Header";
 import AlumniProfile from "@/components/AlumniProfile";
 import StudentProfile from "@/components/StudentProfile";
-
+import { request } from "@/lib/api";
 
 export default function HomePage() {
   const [status, setStatus] = useState("Checking backend...");
 
   useEffect(() => {
-    fetch("http://localhost:8000/health")
-      .then((res) => res.json())
+    request<{ status: string }>("/systems/health")
       .then((data) => setStatus(`Backend status: ${data.status}`))
       .catch(() => setStatus("Backend unreachable"));
   }, []);
@@ -24,7 +24,7 @@ export default function HomePage() {
       <Header organization_name="UTSC Alumni" features="Features" directory="Directory" community="Community" events="Events"/>
       <h1>Alumni Platform</h1>
       <p>This is the Next.js frontend.</p>
-      <Title text="Alumni Directory"/>
+      <Title text="Alumni Directory" />
       <Card
         name="Name"
         occupation="Industry"
@@ -33,9 +33,11 @@ export default function HomePage() {
         tags={["Tag 1", "Tag 2", "Tag 3"]}
         onConnect={() => alert("Connect clicked")}
       />
+
       <MessageBox recipient=""/>
       <AlumniProfile/>
       <StudentProfile/>
+
       <p>{status}</p>
     </main>
   );
