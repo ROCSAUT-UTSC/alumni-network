@@ -93,3 +93,18 @@ class StudentAvatarConfirmRequest(BaseModel):
 
 class StudentAvatarRemoveResponse(BaseModel):
     ok: bool = True
+
+class AlumniFromStudentCreate(StudentBase):
+
+    preferred_name: Optional[str] = Field(default=None, max_length=100)
+
+    industry: str = Field(min_length=1, max_length=120)
+    bio: Optional[str] = Field(default=None, max_length=500)
+    position: Optional[str] = Field(default=None, max_length=120)
+    work_duration_months: Optional[int] = Field(default=None, ge=0, le=60 * 12)
+    academic_history: Optional[str] = Field(default=None, max_length=500)
+
+    graduated_from: Optional[str] = Field(default=None, max_length=150)
+    graduated_at_year: Optional[int] = Field(default=None, ge=1900, le=2100)
+
+    company_website: Optional[str] = Field(default=None, max_length=300)
