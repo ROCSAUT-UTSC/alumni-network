@@ -4,6 +4,10 @@ import { useEffect, useState } from "react";
 import Card from "@/components/AlumniCard";
 import Title from "@/components/Title";
 import MessageBox from "@/components/MessageBox";
+
+import Header from "@/components/Header";
+import AlumniProfile from "@/components/AlumniProfile";
+import StudentProfile from "@/components/StudentProfile";
 import { request } from "@/lib/api";
 
 export default function HomePage() {
@@ -17,6 +21,7 @@ export default function HomePage() {
 
   return (
     <main style={{ padding: "2rem", fontFamily: "system-ui" }}>
+      <Header organization_name="UTSC Alumni" features="Features" directory="Directory" community="Community" events="Events"/>
       <h1>Alumni Platform</h1>
       <p>This is the Next.js frontend.</p>
       <Title text="Alumni Directory" />
@@ -28,7 +33,11 @@ export default function HomePage() {
         tags={["Tag 1", "Tag 2", "Tag 3"]}
         onConnect={() => alert("Connect clicked")}
       />
-      <MessageBox recipient="" />
+
+      <MessageBox recipient=""/>
+      <AlumniProfile/>
+      <StudentProfile/>
+
       <p>{status}</p>
     </main>
   );

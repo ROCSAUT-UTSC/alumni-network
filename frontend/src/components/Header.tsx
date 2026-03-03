@@ -18,12 +18,11 @@ export default function Header({
 }: HeaderProps) {
   return (
     <header className="w-full bg-white">
-      {/* controls the max width + padding like your screenshot */}
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-8">
         {/* Left: logo + name */}
         <Link href="/" className="flex items-center gap-3">
           <Image
-            src="/logo.png" // <- your logo file
+            src="/logo.png"
             alt="UTSC Alumni"
             width={40}
             height={40}
