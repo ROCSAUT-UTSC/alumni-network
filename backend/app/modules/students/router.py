@@ -9,7 +9,7 @@ from app.modules.systems.utils import utcnow
 
 router = APIRouter(prefix="/students", tags=["students"])
 
-fake_uid = uuid.UUID("9be01678-4d41-4a11-af75-7ead95922c5f")
+fake_uid = uuid.UUID("34ec903b-6a41-4977-a646-97394f45d9d5")
 fake_user = AccountUser(
         uid=fake_uid,
         email="arvin111@example.com",
@@ -96,7 +96,7 @@ def create_student_profile(
 def update_student(
     payload: StudentUpdate,
     db: Session = Depends(get_db),
-     user: AccountUser = Depends(get_current_user),
+    user: AccountUser = Depends(get_current_user),
 ) -> StudentPublic:
     """
     Partially update the current student's profile.
