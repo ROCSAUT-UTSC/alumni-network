@@ -1,100 +1,72 @@
-export default function LoginPage() {
+import React from 'react';
+import { Mail, Lock } from 'lucide-react';
+
+const SignInPage: React.FC = () => {
   return (
-    // Main layout container: Stacks Header, Content, and Footer vertically
-    <div className="min-h-screen flex flex-col font-sans text-black">
-      
-      {/* --- HEADER --- */}
-      <nav className="w-full flex items-center justify-between px-10 py-6 border-b border-gray-100">
+    <div className="min-h-screen flex flex-col bg-[#F2E8DF] font-sans text-slate-700">
+      {/* Header - Navigation removed here as well per the top circle */}
+      <header className="flex justify-between items-center px-8 py-6">
         <div className="flex items-center gap-2">
-          {/* Logo Placeholder */}
           <div className="w-8 h-8 border-2 border-black rounded-full" />
-          <span className="font-bold text-xl text-[#4A728A]">UTSC Alumni</span>
+          <span className="font-bold text-xl tracking-tight">UTSC Alumni</span>
         </div>
-        <div className="flex gap-8 font-medium">
-          <span>Features</span>
-          <span>Directory</span>
-          <span>Community</span>
-          <span>Events</span>
-        </div>
-      </nav>
+        {/* Top Nav links removed to match your request */}
+      </header>
 
-      {/* Main content*/}
-      <main className="flex-grow flex flex-col items-center justify-center px-6">
-        <div className="w-full max-w-md text-center">
-          
-          {/* Title */}
-          <h1 className="text-6xl font-bold text-[#4A728A] mb-12">Sign in</h1>
+      {/* Main Sign-In Section */}
+      <main className="flex-grow flex flex-col items-center justify-center px-4">
+        <h1 className="text-6xl font-bold text-[#5B7B94] mb-12">Sign in</h1>
 
-          {/* Form content */}
-          <div className="flex flex-col gap-5">
-            
-            {/* Input with Icon Layout */}
-            <div className="relative">
-              <span className="absolute inset-y-0 left-5 flex items-center">✉</span>
-              <input 
-                type="text" 
-                placeholder="Email" 
-                className="w-full pl-14 pr-6 py-4 border border-gray-400 rounded-full focus:outline-none"
-              />
-            </div>
-
-            <div className="relative">
-              <span className="absolute inset-y-0 left-5 flex items-center">🔒</span>
-              <input 
-                type="password" 
-                placeholder="************" 
-                className="w-full pl-14 pr-6 py-4 border border-gray-400 rounded-full focus:outline-none"
-              />
-            </div>
-
-            {/* Forgot Password Link */}
-            <div className="flex justify-end -mt-3">
-              <a 
-                href="#" 
-                className="text-sm text-[#4A728A] hover:underline transition-all"
-              >
-                Forgot password?
-              </a>
-            </div>
-
-            {/* Button Content */}
-            <div className="flex justify-center pt-2">
-              <button className="px-16 py-3 bg-[#7A5C4F] text-white rounded-xl font-bold text-lg">
-                Login
-              </button>
-            </div>
+        <div className="w-full max-w-md space-y-4">
+          <div className="relative">
+            <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <input
+              type="email"
+              placeholder="Email"
+              className="w-full pl-14 pr-6 py-4 bg-transparent border border-gray-400 rounded-full focus:outline-none focus:ring-1 focus:ring-gray-500"
+            />
           </div>
 
-          {/* Alternative Login Content */}
-          <div className="mt-12">
-            <p className="text-gray-400 text-sm mb-4">Or login with</p>
-            <button className="flex items-center gap-3 px-10 py-2 border border-gray-400 rounded-full mx-auto">
-              <span className="text-red-500">✉</span>
-              <span className="text-red-500 font-bold">Email</span>
+          <div className="relative">
+            <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <input
+              type="password"
+              placeholder="************"
+              className="w-full pl-14 pr-6 py-4 bg-transparent border border-gray-400 rounded-full focus:outline-none focus:ring-1 focus:ring-gray-500"
+            />
+          </div>
+
+          <div className="text-right">
+            <a href="#" className="text-sm text-[#5B7B94] hover:underline">Forgot password?</a>
+          </div>
+
+          <button className="w-full py-4 bg-[#7B6658] text-white font-bold rounded-xl hover:opacity-90 transition-opacity mt-4">
+            Login
+          </button>
+
+          <div className="text-center mt-10 space-y-4">
+            <p className="text-sm text-gray-500">Or login with</p>
+            <button className="w-full max-w-xs mx-auto flex items-center justify-center gap-2 py-3 border border-gray-400 rounded-full hover:bg-white/20">
+              <Mail className="w-4 h-4 text-red-500" />
+              <span className="font-semibold text-red-500">Email</span>
             </button>
-            
-            <p className="mt-10 text-gray-400 text-sm">
-              Not a member? <span className="underline text-black font-medium">Sign up now</span>
-            </p>
           </div>
+
+          <p className="text-center mt-8 text-sm">
+            Not a member? <a href="#" className="font-bold underline">Sign up now</a>
+          </p>
         </div>
       </main>
 
-      {/* --- FOOTER --- */}
-      <footer className="w-full flex items-center justify-between px-10 py-8 border-t border-gray-100">
+      {/* Footer - Navigation links removed per your lower circle */}
+      <footer className="bg-[#E6DACC] py-8 px-8 border-t border-gray-300">
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 border border-black rounded-full" />
-          <span className="font-bold">UTSC Alumni</span>
-        </div>
-        <div className="flex gap-8 text-sm font-medium">
-          <span>Features</span>
-          <span>Directory</span>
-          <span>Community</span>
-          <span>Events</span>
+          <div className="w-8 h-8 bg-[#222] text-white flex items-center justify-center rounded-full text-xs font-bold">N</div>
+          <span className="font-bold text-lg">UTSC Alumni</span>
         </div>
       </footer>
     </div>
   );
-}
+};
 
-
+export default SignInPage;
