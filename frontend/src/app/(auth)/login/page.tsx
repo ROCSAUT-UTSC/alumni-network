@@ -1,5 +1,6 @@
 import React from 'react';
 import { Mail, Lock } from 'lucide-react';
+import Title from '@/components/Title';
 
 const SignInPage: React.FC = () => {
   return (
@@ -15,7 +16,7 @@ const SignInPage: React.FC = () => {
 
       {/* Main Sign-In Section */}
       <main className="flex-grow flex flex-col items-center justify-center px-4">
-        <h1 className="text-6xl font-bold text-[#5B7B94] mb-12">Sign in</h1>
+        <Title text="Sign in" />
 
         <div className="w-full max-w-md space-y-4">
           <div className="relative">
