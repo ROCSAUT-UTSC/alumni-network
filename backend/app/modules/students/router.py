@@ -5,8 +5,20 @@ from sqlalchemy.orm import Session
 from app.models.user import AccountUser, StudentProfile
 from app.modules.students.schemas import *
 from app.modules.accounts.constants import UserRole
+from app.modules.systems.utils import utcnow
 
 router = APIRouter(prefix="/students", tags=["students"])
+
+fake_uid = uuid.UUID("34ec903b-6a41-4977-a646-97394f45d9d5")
+fake_user = AccountUser(
+        uid=fake_uid,
+        email="arvin111@example.com",
+        role=UserRole.STUDENT,
+        is_active=True,
+        is_verified=True,
+        created_at=utcnow(),
+        updated_at=utcnow(),
+    )
 
 def _is_student(account: AccountUser) -> None:
     if account.role != UserRole.STUDENT:
@@ -55,7 +67,7 @@ def get_student_profile(
 def create_student_profile(
     payload: StudentCreate,
     db: Session = Depends(get_db),
-    user: AccountUser = Depends(get_current_user),
+    user : AccountUser = fake_user #user: AccountUser = Depends(get_current_user),
 ) -> StudentPublic:
     """
     Create the current users's student profile.
@@ -84,7 +96,7 @@ def create_student_profile(
 def update_student(
     payload: StudentUpdate,
     db: Session = Depends(get_db),
-     user: AccountUser = Depends(get_current_user),
+    user: AccountUser = Depends(get_current_user),
 ) -> StudentPublic:
     """
     Partially update the current student's profile.

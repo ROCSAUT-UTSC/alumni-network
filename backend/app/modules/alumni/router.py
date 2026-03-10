@@ -14,7 +14,7 @@ from app.modules.systems.utils import utcnow
 
 router = APIRouter(prefix="/alumni", tags=["alumni"])
 
-fake_uid = uuid.UUID("5e15150e-632b-41cd-a497-6a89550ffa91")
+fake_uid = uuid.UUID("b4dc12c9-0236-4fee-a213-66268f052187")
 fake_user = AccountUser(
         uid=fake_uid,
         email="user456@example.com",
