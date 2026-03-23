@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./global.css";
+import Script from 'next/script'
+
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -22,25 +24,30 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return (
-    <html lang="en">
-      <body>
-        <main
-          className={`
+
+return (
+  <html lang="en">
+    <body className="antialiased">
+      <main
+        className={`
           ${geistSans.variable} 
           ${geistMono.variable} 
-          antialiased
-          min-h-screen
-          bg-linear-to-b
-          from-[#FDF7F3]
-          via-[#F4E1D4]
-          to-[#E8D0C1]
+          antialiased 
+          min-h-screen 
+          bg-linear-to-b 
+          from-[#FDF7F3] 
+          via-[#F4E1D4] 
+          to-[#E8D0C1] 
           text-neutral-800
         `}
-        >
-          {children}
-        </main>
-      </body>
-    </html>
-  );
+      >
+        <Script 
+          src="https://accounts.google.com/gsi/client" 
+          strategy="beforeInteractive" 
+        />
+        {children}
+      </main>
+    </body>
+  </html>
+);
 }
