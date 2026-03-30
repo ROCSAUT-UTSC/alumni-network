@@ -170,6 +170,38 @@ def logout(current_user: AccountUser = Depends(get_current_user), db: Session = 
     db.commit()
     return {"status": "ok"}
 
+@router.post("/token", response_model=TokenPair)
+def token_endpoint(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db),
+):
+    email = form_data.username
+    password = form_data.password
+
+    user = db.execute(select(AccountUser).where(AccountUser.email == email)).scalar_one_or_none()
+    if not user or not user.is_active:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+
+    if not user.password_hash:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This account uses OAuth. Please sign in with Google/LinkedIn.",
+        )
+
+    if not verify_password(password, user.password_hash):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+    
+  
+    access = create_access_token(subject=str(user.uid), role=str(user.role))
+    refresh = create_refresh_token(subject=str(user.uid), token_version=user.token_version)
+
+
+    return TokenPair(
+        access_token=access,
+        refresh_token=refresh,
+        token_type="bearer",
+    )
+
 ### EMAIL VERIFICATION ROUTES ###
 @router.post("/verify/resend")
 def resend_verification(email: str, bg: BackgroundTasks, db: Session = Depends(get_db)):
