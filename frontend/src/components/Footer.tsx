@@ -7,7 +7,7 @@ type FooterProps = {
 
 export default function Footer({ organization_name }: FooterProps) {
   return (
-    <footer className="w-full bg-white border-t border-black/10">
+    <footer className="w-full bg-[#f5f4ef] border-t border-black/10">
       <div
         className="mx-auto flex w-full flex-col gap-[clamp(14px,2.4vw,22px)] md:flex-row md:items-center md:justify-between"
         style={{

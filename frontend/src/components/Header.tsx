@@ -46,7 +46,7 @@ export default function Header({
   }, []);
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-white/90 backdrop-blur border-b border-black/10">
+    <header className="sticky top-0 z-50 w-full bg-[#f5f4ef] backdrop-blur border-b border-black/10,">
       <div
         className="flex items-center justify-between" // Removed "mx-auto"
         style={{
