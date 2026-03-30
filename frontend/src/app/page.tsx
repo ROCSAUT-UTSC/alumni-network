@@ -22,7 +22,7 @@ export default function HomePage() {
   }, []);
 
   return (
-    <main style={{ padding: "2rem", fontFamily: "system-ui" }}>
+    <main style={{fontFamily: "system-ui" }}>
       <Header organization_name="UTSC Alumni" features="Features" student_directory="Student Directory" alumni_directory="Alumni Directory" login="Login" registar="Registar"/>
       <h1>Alumni Platform</h1>
       <p>This is the Next.js frontend.</p>
