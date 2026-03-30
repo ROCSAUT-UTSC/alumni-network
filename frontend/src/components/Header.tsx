@@ -48,11 +48,11 @@ export default function Header({
   return (
     <header className="sticky top-0 z-50 w-full bg-white/90 backdrop-blur border-b border-black/10">
       <div
-        className="mx-auto flex items-center justify-between"
+        className="flex items-center justify-between" // Removed "mx-auto"
         style={{
           height: "clamp(56px,6vw,80px)",
           paddingInline: "clamp(14px,3vw,32px)",
-          maxWidth: "min(1280px, 96vw)",
+          // maxWidth: "min(1280px, 96vw)", <-- REMOVE OR COMMENT THIS LINE
         }}
       >
         {/* Left: logo + name */}

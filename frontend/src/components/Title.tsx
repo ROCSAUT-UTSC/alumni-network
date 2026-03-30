@@ -4,27 +4,25 @@ type TitleProps = {
 
 export default function Title({ text }: TitleProps) {
   return (
-    <header
+    <div
       style={{
-        marginBottom: 16,
         width: "100%",
-        height: 70,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
+        containerType: "inline-size", 
+        marginBottom: 24,
       }}
     >
       <h1
         style={{
-          fontSize: 64,
-          fontWeight: 700,
           margin: 0,
-          justifyContent: "center",
+          textAlign: "center",
           color: "#007A97",
+          fontWeight: 700,
+          fontSize: "clamp(2rem, 10cqw, 4rem)",
+          lineHeight: 1.1,
         }}
       >
         {text}
       </h1>
-    </header>
+    </div>
   );
 }

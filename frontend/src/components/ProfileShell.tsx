@@ -1,20 +1,32 @@
 import React from "react";
 
-type SidebarItem = {
-  label: string;
-  active?: boolean;
-  onClick?: () => void;
+type ProfileRole = "student" | "alumni";
+
+type ProfileShellProps = {
+  role: ProfileRole;
+  sidebarItems: {
+    label: string;
+    active?: boolean;
+    onClick?: () => void;
+  }[];
+  avatarScale?: number;
+  children: React.ReactNode;
+};
+
+const avatarColors: Record<ProfileRole, string> = {
+  alumni: "#3b6f8f",
+  student: "#7a4b3d",
 };
 
 export default function ProfileShell({
+  role,
   sidebarItems,
-  avatarColor = "#3b6f8f",
   children,
-}: {
-  sidebarItems: SidebarItem[];
-  avatarColor?: string;
-  children: React.ReactNode;
-}) {
+  avatarScale = 1,
+}: ProfileShellProps) {
+
+  const baseIconSize = "clamp(44px,6vw,78px)";
+
   return (
     <div
       className="w-full max-w-[min(95vw,1100px)] bg-[#7a4b3d] p-[clamp(10px,1.6vw,18px)]"
@@ -34,7 +46,7 @@ export default function ProfileShell({
             style={{
               width: "clamp(96px,14vw,150px)",
               height: "clamp(96px,14vw,150px)",
-              background: avatarColor,
+              background: avatarColors[role],
             }}
           >
             {/* icon */}
@@ -43,8 +55,8 @@ export default function ProfileShell({
               fill="currentColor"
               className="text-white/95"
               style={{
-                width: "clamp(44px,6vw,78px)",
-                height: "clamp(44px,6vw,78px)",
+                width: `calc(${baseIconSize} * ${avatarScale})`,
+                height: `calc(${baseIconSize} * ${avatarScale})`,
               }}
               aria-hidden="true"
             >

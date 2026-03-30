@@ -6,11 +6,13 @@ import { ProfileField } from "./ProfileField";
 export default function AlumniProfile() {
   return (
     <ProfileShell
+      role="alumni"
+      avatarScale={1.6}
       sidebarItems={[
-        { label: "Dashboard", active: true },
-        { label: "Account Details" },
-        { label: "Change Password", active: true },
-        { label: "Logout" },
+        { label: "Basic Info", active: true },
+        { label: "Professional Experience" },
+        { label: "Profile Info", active: true },
+        { label: "Logout", active: true },
       ]}
     >
       <div className="flex flex-col gap-3">
