@@ -61,7 +61,7 @@ export default function Footer({ organization_name }: FooterProps) {
             <div className="flex items-center gap-[clamp(10px,1.6vw,16px)] ml-[clamp(6px,1vw,12px)]">
               <SocialImageLink href="https://www.instagram.com/utsc.rocsaut/" label="Instagram" src="/instagram_logo.webp" />
               <SocialImageLink href="https://ca.linkedin.com/company/rocsaut" label="LinkedIn" src="/linkedin_logo.webp" />
-              <SocialImageLink href="https://line.me" label="LINE" src="/line_logo.webp" />
+              <SocialImageLink href="https://line.me/R/ti/p/%40215nnwqe" label="LINE" src="/line_logo.webp" />
           </div>
           </div>
         </div>
