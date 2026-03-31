@@ -243,6 +243,7 @@ def resolve_oauth_user(
         email_at_time=email,
     )
     db.add(identity)
-    db.flush()
+    db.commit()
+    db.flush(user)
 
     return user
