@@ -119,20 +119,3 @@ def get_student_by_id(
     """
     profile = _get_student_profile(db, uid)
     return profile
-
-@router.get("/all", response_model=Iterable[StudentPublic])
-def get_all_students(
-    skip: int = 0,
-    limit: int = 100,
-    db: Session = Depends(get_db),
-) -> Iterable[StudentProfile]:
-    """
-    Get all student profiles.
-    """
-    profiles = (
-        db.query(StudentProfile)
-        .offset(skip)
-        .limit(limit)
-        .all()
-    )
-    return profiles
