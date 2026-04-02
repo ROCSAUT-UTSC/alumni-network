@@ -7,21 +7,6 @@ const RegistrationPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#FDF5F0] flex flex-col font-sans">
-      {/* Navigation Header */}
-      <header className="px-8 py-4 flex justify-between items-center bg-white border-b border-gray-100">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center">
-             <span className="text-white text-xs">Logo</span>
-          </div>
-          <span className="font-semibold text-[#2D5A75]">UTSC Alumni</span>
-        </div>
-        <nav className="hidden md:flex gap-8 text-gray-700 font-medium">
-          <a href="#" className="hover:text-black">Features</a>
-          <a href="#" className="hover:text-black">Directory</a>
-          <a href="#" className="hover:text-black">Community</a>
-          <a href="#" className="hover:text-black">Events</a>
-        </nav>
-      </header>
 
       {/* Main Registration Form */}
       <main className="flex-grow flex flex-col items-center justify-center px-4 py-12">
@@ -108,21 +93,7 @@ const RegistrationPage: React.FC = () => {
 </div>
 </form>
 </main>
-
-      {/* Footer */}
-      <footer className="px-8 py-8 flex flex-col md:flex-row justify-between items-center border-t border-gray-200 gap-4">
-        <div className="flex items-center gap-2">
-           <div className="w-8 h-8 bg-black rounded-full"></div>
-           <span className="font-semibold text-[#2D5A75]">UTSC Alumni</span>
-        </div>
-        <div className="flex gap-8 text-gray-700 text-sm">
-          <a href="#">Features</a>
-          <a href="#">Directory</a>
-          <a href="#">Community</a>
-          <a href="#">Events</a>
-        </div>
-      </footer>
-    </div>
+</div>
   );
 };
 
