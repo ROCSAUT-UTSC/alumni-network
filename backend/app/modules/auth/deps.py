@@ -15,8 +15,7 @@ from app.modules.auth.security import decode_token
 
 settings = get_settings()
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
-
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/token")
 
 def get_db():
     db = SessionLocal()

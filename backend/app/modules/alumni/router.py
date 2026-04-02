@@ -1,30 +1,22 @@
 from __future__ import annotations
 
 import uuid
-from typing import Optional, Iterable, Dict, Any
+from typing import Optional, Iterable
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlmodel import select
+from sqlalchemy import or_, func
 from sqlalchemy.orm import Session
 
 from app.modules.accounts.constants import UserRole
 from app.models.user import AccountUser, AlumniProfile
 from app.modules.alumni.schemas import *
 from app.modules.auth.deps import get_db, get_current_user
-from app.modules.systems.utils import utcnow
 
 router = APIRouter(prefix="/alumni", tags=["alumni"])
 
-fake_uid = uuid.UUID("5e15150e-632b-41cd-a497-6a89550ffa91")
-fake_user = AccountUser(
-        uid=fake_uid,
-        email="user456@example.com",
-        role=UserRole.ALUMNI,
-        is_active=True,
-        is_verified=True,
-        created_at=utcnow(),
-        updated_at=utcnow(),
-    )
-
+### Helper functions ###
 def _is_alumni(account: AccountUser) -> None:
     if account.role != UserRole.ALUMNI:
         raise HTTPException(
@@ -50,7 +42,7 @@ def _get_alumni_profile(db: Session, user_uid: uuid.UUID) -> AlumniProfile:
 def create_alumni_profile(
     payload: AlumniCreate,
     db: Session = Depends(get_db),
-    user: AccountUser = fake_user,#AccountUser = Depends(get_current_user),
+    user: AccountUser = Depends(get_current_user),
 ) -> AlumniPublic:
     """
     Create the current users's alumni profile.
@@ -82,7 +74,7 @@ def create_alumni_profile(
 @router.get("/me", response_model=AlumniPublic)
 def get_alumni(
     db: Session = Depends(get_db),
-    user: AccountUser = fake_user #Depends(get_current_user),
+    user: AccountUser = Depends(get_current_user),
 ) -> AlumniPublic:
     """
     Get the current alumni's profile.
@@ -95,7 +87,7 @@ def get_alumni(
 def update_alumni(
     payload: AlumniUpdate,
     db: Session = Depends(get_db),
-    user: AccountUser = fake_user #Depends(get_current_user),
+    user: AccountUser = Depends(get_current_user),
 ) -> AlumniPublic:
     """
     Partially update the current alumni's profile.
@@ -119,19 +111,8 @@ def update_alumni(
 
     return profile
 
-@router.get("/{uid}", response_model=AlumniPublic)
-def get_alumni_by_id(
-    uid: uuid.UUID,
-    db: Session = Depends(get_db),
-) -> AlumniPublic:
-    """
-    Fetch an alumni profile by UID.
-    """
-    profile = _get_alumni_profile(db, uid)
-    return profile
-
-@router.get("/all", response_model=Iterable[AlumniPublic])
-def get_all_alumni(
+@router.get("/directory", response_model=Iterable[AlumniPublic])
+def get_alumni_directory(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
@@ -146,3 +127,15 @@ def get_all_alumni(
         .all()
     )
     return profiles
+
+@router.get("/{uid}", response_model=AlumniPublic)
+def get_alumni_by_id(
+    uid: uuid.UUID,
+    db: Session = Depends(get_db),
+) -> AlumniPublic:
+    """
+    Fetch an alumni profile by UID.
+    """
+    profile = _get_alumni_profile(db, uid)
+    return profile
+

@@ -5,8 +5,11 @@ from app.modules.accounts.constants import UserRole
 
 class Settings:
     PROJECT_NAME: str = "Alumni Platform API"
-    BACKEND_CORS_ORIGINS: list[str] = ["*"] 
-
+    FRONTEND_CORS_ORIGINS: list[str] = [
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://127.0.0.1:3000",
+    ]
     # DB 
     POSTGRES_USER: str = os.environ["POSTGRES_USER"]
     POSTGRES_PASSWORD: str = os.environ["POSTGRES_PASSWORD"]
@@ -23,6 +26,7 @@ class Settings:
 
     # Email
     FRONTEND_URL: str = os.environ["FRONTEND_URL"]
+    EMAIL_FROM: str = os.environ["EMAIL_FROM"]
     RESEND_API_KEY: str = os.environ["RESEND_API_KEY"]
     VERIFY_RESEND_COOLDOWN_SECONDS: int = 60
     REQUIRE_VERIFY: bool = True
@@ -34,14 +38,21 @@ class Settings:
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
 
     # OAuth
-    OAUTH_REDIRECT_URI: str = "http://localhost:3000/oauth/callback"
+    OAUTH_REDIRECT_URI: str = os.environ["BACKEND_URL"] + "/api/auth/oauth/google/callback"
     OAUTH_STATE_TTL_SECONDS : int = 600
     GOOGLE_CLIENT_ID: str = os.environ["GOOGLE_CLIENT_ID"]
     GOOGLE_CLIENT_SECRET: str = os.environ["GOOGLE_CLIENT_SECRET"]
     GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
+    GOOGLE_SCOPE = "openid email profile"
     GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
     GOOGLE_USERINFO_URL = "https://openidconnect.googleapis.com/v1/userinfo"
 
+    # R2 (Cloudflare)
+    R2_ACCOUNT_ID: str = os.environ["R2_ACCOUNT_ID"]
+    R2_ACCESS_KEY_ID: str = os.environ["R2_ACCESS_KEY_ID"]
+    R2_SECRET_ACCESS_KEY: str = os.environ["R2_SECRET_ACCESS_KEY"]
+    R2_BUCKET_NAME: str = os.environ["R2_BUCKET_NAME"]
+    R2_PUBLIC_BASE_URL: str = os.environ["R2_PUBLIC_BASE_URL"]
 
 @lru_cache
 def get_settings():

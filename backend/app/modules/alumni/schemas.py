@@ -28,7 +28,7 @@ class AlumniBase(BaseModel):
     linkedin: Optional[str] = Field(default=None, max_length=300)
     personal_website: Optional[str] = Field(default=None, max_length=300)
     company_website: Optional[str] = Field(default=None, max_length=300)
-    
+
     skills: Optional[List[str]] = Field(default=None, max_length=50)
 
 class AlumniCreate(AlumniBase):
@@ -63,28 +63,4 @@ class AlumniPublic(AlumniBase):
     model_config = ConfigDict(from_attributes=True)
     uid: uuid.UUID
     avatar_updated_at: Optional[datetime] = None
-
-
-
-class AlumniAvatarUploadInitRequest(BaseModel):
-    filename: str = Field(min_length=1, max_length=255)
-    content_type: str = Field(min_length=3, max_length=100)
-    file_size: int = Field(ge=1, le=10 * 1024 * 1024)
-
-
-class AlumniAvatarUploadInitResponse(BaseModel):
-    upload_url: str
-    method: Literal["PUT"] = "PUT"
-    headers: Dict[str, str] = Field(default_factory=dict)
-
-    key: str
-    expires_in: int
-
-
-class AlumniAvatarConfirmRequest(BaseModel):
-    key: str = Field(min_length=1, max_length=512)
-
-
-class AlumniAvatarRemoveResponse(BaseModel):
-    ok: bool = True
 

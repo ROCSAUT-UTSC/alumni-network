@@ -69,3 +69,17 @@ class OAuthLoginSuccess(BaseModel):
     status: Literal["login_successful"] = "Login Successful"
     tokens: TokenPair
     needs_profile: bool
+
+### PASSWORD RESET SCHEMAS ###
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+class ForgotPasswordResponse(BaseModel):
+    status: Literal["ok"] = "ok"
+
+class ResetPasswordRequest(BaseModel):
+    token: str = Field(..., min_length=1)
+    new_password: str = Field(..., min_length=8, max_length=255)
+
+class ResetPasswordResponse(BaseModel):
+    status: Literal["password_reset_successful"] = "password_reset_successful"

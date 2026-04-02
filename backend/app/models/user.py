@@ -4,12 +4,13 @@ from typing import Optional, List
 
 from pydantic import EmailStr
 from sqlmodel import Field, SQLModel, Relationship
-from sqlalchemy import Column, Text
+from sqlalchemy import Column, Text, UniqueConstraint
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy.dialects.postgresql import ARRAY
 
 from app.modules.accounts.constants import UserRole
 from app.modules.systems.utils import utcnow
+
 
 
 class AccountUser(SQLModel, table=True):
@@ -22,8 +23,8 @@ class AccountUser(SQLModel, table=True):
     timezone: Optional[str] = Field(default="UTC", max_length=50)
 
     role: UserRole = Field(
-        sa_column=Column(SAEnum(UserRole, name="user_role"), nullable=False),
-        default=UserRole.STUDENT,
+        default=None,
+        sa_column=Column(SAEnum(UserRole, name="user_role"), nullable=True),
     )
     is_active: bool = Field(default=False)
     is_verified: bool = Field(default=False)
@@ -40,11 +41,14 @@ class AccountUser(SQLModel, table=True):
     verify_jti_hash: Optional[str] = Field(default=None, max_length=64, index=True)
     verify_expires_at: Optional[datetime] = Field(default=None, index=True)
     verified_at: Optional[datetime] = Field(default=None, index=True)
-
+    
+    password_reset_jti_hash: Optional[str] = Field(default=None, max_length=64, index=True)
+    password_reset_expires_at: Optional[datetime] = Field(default=None, index=True)
 
     student_profile: Optional["StudentProfile"] = Relationship(back_populates="account", sa_relationship_kwargs={"uselist": False},)
     alumni_profile: Optional["AlumniProfile"] = Relationship(back_populates="account",  sa_relationship_kwargs={"uselist": False},)
     admin_profile: Optional["AdminProfile"] = Relationship(back_populates="account",  sa_relationship_kwargs={"uselist": False},)
+    identities: list["AccountIdentity"] = Relationship(back_populates="user", sa_relationship_kwargs={"cascade": "all, delete-orphan"},)
 
 class StudentProfile(SQLModel, table=True):
     __tablename__ = "student_profile"
@@ -126,3 +130,21 @@ class AdminProfile(SQLModel, table=True):
     display_name: Optional[str] = Field(default=None, max_length=120)
 
     account: "AccountUser" = Relationship(back_populates="admin_profile")
+
+class AccountIdentity(SQLModel, table=True):
+    __tablename__ = "account_identity"
+    __table_args__ = (
+        UniqueConstraint("provider", "provider_sub"),
+        UniqueConstraint("user_uid", "provider"),
+    )
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    user_uid: uuid.UUID = Field(foreign_key="account_user.uid", index=True)
+
+    provider: str = Field(max_length=30, index=True)
+    provider_sub: str = Field(max_length=255, index=True)
+    provider_email: Optional[EmailStr] = Field(default=None, max_length=255)
+
+    created_at: datetime = Field(default_factory=utcnow, index=True)
+
+    user: "AccountUser" = Relationship(back_populates="identities")

@@ -14,6 +14,10 @@ def _has_password(account) -> bool:
 
 def build_user_me(db: Session, account) -> UserMe:
     base = AccountPublic.model_validate(account).model_dump()
+
+    for key in ("role", "has_password", "has_profile"):
+        base.pop(key, None)
+
     has_password = _has_password(account)
     role = account.role
 
@@ -89,7 +93,7 @@ def build_user_me(db: Session, account) -> UserMe:
             email=account.email,
             role=UserRole.ADMIN,
             has_password=has_password,
-            has_profile=True,
+            has_profile=bool(prof_obj),
             profile=profile,
         )
 
