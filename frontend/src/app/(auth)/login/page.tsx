@@ -1,30 +1,96 @@
-import React from 'react';
-import { Mail, Lock } from 'lucide-react';
-import Title from '@/components/Title';
+"use client";
+
+import React, { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Mail, Lock, Loader2 } from "lucide-react";
+import Title from "@/components/Title";
+
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
 const SignInPage: React.FC = () => {
+  const router = useRouter();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+
+    if (!email.trim() || !password.trim()) {
+      setError("Please enter both email and password.");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
+
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(data?.detail || data?.message || "Login failed.");
+      }
+
+      if (data?.access_token) {
+        localStorage.setItem("access_token", data.tokens.access_token);
+      }
+
+      setSuccess("Login successful. Redirecting...");
+      router.push("/dashboard");
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Something went wrong.";
+      setError(message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = () => {
+    window.location.href = `${API_BASE_URL}/auth/oauth/google/start`;
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-[#F2E8DF] font-sans text-slate-700">
-      {/* Header - Navigation removed here as well per the top circle */}
       <header className="flex justify-between items-center px-8 py-6">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 border-2 border-black rounded-full" />
           <span className="font-bold text-xl tracking-tight">UTSC Alumni</span>
         </div>
-        {/* Top Nav links removed to match your request */}
       </header>
 
-      {/* Main Sign-In Section */}
       <main className="flex-grow flex flex-col items-center justify-center px-4">
         <Title text="Sign in" />
 
-        <div className="w-full max-w-md space-y-4">
+        <form onSubmit={handleLogin} className="w-full max-w-md space-y-4">
           <div className="relative">
             <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="email"
               placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
               className="w-full pl-14 pr-6 py-4 bg-transparent border border-gray-400 rounded-full focus:outline-none focus:ring-1 focus:ring-gray-500"
+              disabled={isLoading}
             />
           </div>
 
@@ -33,16 +99,48 @@ const SignInPage: React.FC = () => {
             <input
               type="password"
               placeholder="************"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
               className="w-full pl-14 pr-6 py-4 bg-transparent border border-gray-400 rounded-full focus:outline-none focus:ring-1 focus:ring-gray-500"
+              disabled={isLoading}
             />
           </div>
 
           <div className="text-right">
-            <a href="#" className="text-sm text-[#5B7B94] hover:underline">Forgot password?</a>
+            <Link
+              href="/forgot-password"
+              className="text-sm text-[#5B7B94] hover:underline"
+            >
+              Forgot password?
+            </Link>
           </div>
 
-          <button className="w-full py-4 bg-[#7B6658] text-white font-bold rounded-xl hover:opacity-90 transition-opacity mt-4">
-            Login
+          {error && (
+            <div className="rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {error}
+            </div>
+          )}
+
+          {success && (
+            <div className="rounded-xl border border-green-300 bg-green-50 px-4 py-3 text-sm text-green-700">
+              {success}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full py-4 bg-[#7B6658] text-white font-bold rounded-xl hover:opacity-90 transition-opacity mt-4 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Logging in...
+              </>
+            ) : (
+              "Login"
+            )}
           </button>
 
           <div className="text-center mt-10 space-y-4">
@@ -67,15 +165,19 @@ const SignInPage: React.FC = () => {
     </div>
 
           <p className="text-center mt-8 text-sm">
-            Not a member? <a href="#" className="font-bold underline">Sign up now</a>
+            Not a member?{" "}
+            <Link href="/signup" className="font-bold underline">
+              Sign up now
+            </Link>
           </p>
-        </div>
+        </form>
       </main>
 
-      {/* Footer - Navigation links removed per your lower circle */}
       <footer className="bg-[#E6DACC] py-8 px-8 border-t border-gray-300">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-[#222] text-white flex items-center justify-center rounded-full text-xs font-bold">N</div>
+          <div className="w-8 h-8 bg-[#222] text-white flex items-center justify-center rounded-full text-xs font-bold">
+            N
+          </div>
           <span className="font-bold text-lg">UTSC Alumni</span>
         </div>
       </footer>
