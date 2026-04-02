@@ -1,19 +1,22 @@
 from __future__ import annotations
 
 import uuid
-from typing import Optional, Iterable, Dict, Any
+from typing import Optional, Iterable
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlmodel import select
+from sqlalchemy import or_, func
 from sqlalchemy.orm import Session
 
 from app.modules.accounts.constants import UserRole
 from app.models.user import AccountUser, AlumniProfile
 from app.modules.alumni.schemas import *
 from app.modules.auth.deps import get_db, get_current_user
-from app.modules.systems.utils import utcnow
 
 router = APIRouter(prefix="/alumni", tags=["alumni"])
 
+### Helper functions ###
 def _is_alumni(account: AccountUser) -> None:
     if account.role != UserRole.ALUMNI:
         raise HTTPException(
@@ -108,19 +111,8 @@ def update_alumni(
 
     return profile
 
-@router.get("/{uid}", response_model=AlumniPublic)
-def get_alumni_by_id(
-    uid: uuid.UUID,
-    db: Session = Depends(get_db),
-) -> AlumniPublic:
-    """
-    Fetch an alumni profile by UID.
-    """
-    profile = _get_alumni_profile(db, uid)
-    return profile
-
-@router.get("/all", response_model=Iterable[AlumniPublic])
-def get_all_alumni(
+@router.get("/directory", response_model=Iterable[AlumniPublic])
+def get_alumni_directory(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
@@ -135,3 +127,15 @@ def get_all_alumni(
         .all()
     )
     return profiles
+
+@router.get("/{uid}", response_model=AlumniPublic)
+def get_alumni_by_id(
+    uid: uuid.UUID,
+    db: Session = Depends(get_db),
+) -> AlumniPublic:
+    """
+    Fetch an alumni profile by UID.
+    """
+    profile = _get_alumni_profile(db, uid)
+    return profile
+

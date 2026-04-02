@@ -267,9 +267,7 @@ def confirm_verification(token: str, db: Session = Depends(get_db)):
 
 ### OAUTH ROUTES ###
 @router.get("/oauth/google/start")
-def google_oauth_start(
-    role: UserRole = Query(UserRole.STUDENT),
-):
+def google_oauth_start():
     """
     Start Google OAuth flow.
 
@@ -277,14 +275,10 @@ def google_oauth_start(
     - We create a signed state token (with provider + redirect_uri + role)
     - We build Google authorization URL and redirect the browser there.
     """
-    allowed_roles = {UserRole.STUDENT, UserRole.ALUMNI}
-    if role not in allowed_roles:
-        role = UserRole.STUDENT
 
     state = create_oauth_state(
         provider="google",               
-        redirect_uri= settings.OAUTH_REDIRECT_URI,
-        role=str(role),                  
+        redirect_uri= settings.OAUTH_REDIRECT_URI,                
     )
 
     client = get_provider_client("google")
@@ -326,12 +320,6 @@ async def google_oauth_callback(
         )
     except JWTError:
         raise HTTPException(status_code=400, detail="Invalid OAuth state")
-    
-    role_str = state_payload.get("role")
-    if role_str == str(UserRole.ALUMNI):
-        desired_role = UserRole.ALUMNI
-    else:
-        desired_role = UserRole.STUDENT
 
     # Exchange code for Google tokens + fetch profile
     client = get_provider_client("google")
@@ -359,7 +347,6 @@ async def google_oauth_callback(
         provider_sub=sub,
         email=email,
         email_verified=email_verified,
-        role=desired_role,
     )
 
     # Issue tokens

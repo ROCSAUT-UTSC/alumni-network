@@ -5,11 +5,19 @@ from sqlalchemy.orm import Session
 from app.models.user import AccountUser, StudentProfile, AlumniProfile
 from app.modules.students.schemas import StudentPublic
 from app.modules.alumni.schemas import AlumniPublic
+from app.modules.accounts.constants import UserRole
 
 
+def _is_admin(user: AccountUser = Depends(get_current_user)) -> AccountUser:
+    if user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only admin accounts can access this resource.",
+        )
+    return user
 
-router = APIRouter(prefix="/admin", tags=["admin"])
 
+router = APIRouter(prefix="/admin", tags=["admin"],dependencies=[Depends(_is_admin)])
 
 @router.get("/all-students", response_model=Iterable[StudentPublic])
 def get_all_students(

@@ -97,7 +97,6 @@ def create_oauth_state(
     *,
     provider: OAuthProvider,
     redirect_uri: str,
-    role: Optional[str] = None,
 ) -> str:
     """
     Create a signed, short-lived state token for OAuth.
@@ -118,8 +117,6 @@ def create_oauth_state(
         "ru": redirect_uri,
         "exp": exp,
     }
-    if role is not None:
-        payload["role"] = role
 
     return jwt.encode(
         payload,
@@ -167,7 +164,6 @@ def resolve_oauth_user(
     provider_sub: str,
     email: str,
     email_verified: bool,
-    role: Optional[UserRole] = None,
 ) -> AccountUser:
     """
     Find or create an AccountUser for this OAuth identity.
@@ -216,19 +212,13 @@ def resolve_oauth_user(
 
     # No user -> create new one
 
-    allowed_roles = {UserRole.STUDENT, UserRole.ALUMNI}
-    if role not in allowed_roles:
-        final_role = UserRole.STUDENT
-    else:
-        final_role = role
-
     timezone = getattr(settings, "DEFAULT_TIMEZONE", "America/Toronto")
 
     user = AccountUser(
         email=email,
         password_hash=None,
         timezone=timezone,
-        role=final_role,
+        role=None,
         is_active=True,
         is_verified=email_verified,
         token_version=0,
@@ -244,6 +234,6 @@ def resolve_oauth_user(
     )
     db.add(identity)
     db.commit()
-    db.flush(user)
+    db.refresh(user)
 
     return user
