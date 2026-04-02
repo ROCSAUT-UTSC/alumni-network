@@ -70,13 +70,6 @@ const SignInPage: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F2E8DF] font-sans text-slate-700">
-      <header className="flex justify-between items-center px-8 py-6">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 border-2 border-black rounded-full" />
-          <span className="font-bold text-xl tracking-tight">UTSC Alumni</span>
-        </div>
-      </header>
-
       <main className="flex-grow flex flex-col items-center justify-center px-4">
         <Title text="Sign in" />
 
@@ -172,15 +165,6 @@ const SignInPage: React.FC = () => {
           </p>
         </form>
       </main>
-
-      <footer className="bg-[#E6DACC] py-8 px-8 border-t border-gray-300">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-[#222] text-white flex items-center justify-center rounded-full text-xs font-bold">
-            N
-          </div>
-          <span className="font-bold text-lg">UTSC Alumni</span>
-        </div>
-      </footer>
     </div>
   );
 };
