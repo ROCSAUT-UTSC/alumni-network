@@ -49,56 +49,7 @@ const RegistrationPage: React.FC = () => {
 
         {/* Form Fields */}
         <form className="w-full max-w-2xl space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* First Name */}
-            <div className="relative">
-              <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                <Star className="h-5 w-5 text-gray-800" />
-              </div>
-              <input
-                type="text"
-                placeholder="First Name..."
-                className="w-full pl-12 pr-4 py-4 bg-white border border-[#6D4C41] rounded-full focus:outline-none focus:ring-2 focus:ring-[#4A8DA8]"
-              />
-            </div>
-
-            {/* Last Name */}
-            <div className="relative">
-              <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                <Star className="h-5 w-5 text-gray-800" />
-              </div>
-              <input
-                type="text"
-                placeholder="Last Name..."
-                className="w-full pl-12 pr-4 py-4 bg-white border border-[#6D4C41] rounded-full focus:outline-none focus:ring-2 focus:ring-[#4A8DA8]"
-              />
-            </div>
-
-            {/* Pronouns */}
-            <div className="relative">
-              <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                <ChevronDown className="h-5 w-5 text-gray-800" />
-              </div>
-              <select className="w-full pl-12 pr-4 py-4 bg-white border border-[#6D4C41] rounded-full appearance-none focus:outline-none focus:ring-2 focus:ring-[#4A8DA8] text-gray-500">
-                <option>Pronouns</option>
-                <option>He/Him</option>
-                <option>She/Her</option>
-                <option>They/Them</option>
-              </select>
-            </div>
-
-            {/* University */}
-            <div className="relative">
-              <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                <Search className="h-5 w-5 text-gray-800" />
-              </div>
-              <input
-                type="text"
-                placeholder="University"
-                className="w-full pl-12 pr-4 py-4 bg-white border border-[#6D4C41] rounded-full focus:outline-none focus:ring-2 focus:ring-[#4A8DA8]"
-              />
-            </div>
-          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
 
           {/* Email */}
           <div className="relative">
