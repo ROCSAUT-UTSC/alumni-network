@@ -23,8 +23,8 @@ class AccountUser(SQLModel, table=True):
     timezone: Optional[str] = Field(default="UTC", max_length=50)
 
     role: UserRole = Field(
-        sa_column=Column(SAEnum(UserRole, name="user_role"), nullable=False),
-        default=UserRole.STUDENT,
+        default=None,
+        sa_column=Column(SAEnum(UserRole, name="user_role"), nullable=True),
     )
     is_active: bool = Field(default=False)
     is_verified: bool = Field(default=False)
@@ -41,7 +41,9 @@ class AccountUser(SQLModel, table=True):
     verify_jti_hash: Optional[str] = Field(default=None, max_length=64, index=True)
     verify_expires_at: Optional[datetime] = Field(default=None, index=True)
     verified_at: Optional[datetime] = Field(default=None, index=True)
-
+    
+    password_reset_jti_hash: Optional[str] = Field(default=None, max_length=64, index=True)
+    password_reset_expires_at: Optional[datetime] = Field(default=None, index=True)
 
     student_profile: Optional["StudentProfile"] = Relationship(back_populates="account", sa_relationship_kwargs={"uselist": False},)
     alumni_profile: Optional["AlumniProfile"] = Relationship(back_populates="account",  sa_relationship_kwargs={"uselist": False},)

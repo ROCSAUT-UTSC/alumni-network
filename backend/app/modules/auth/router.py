@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+from cmath import exp
 import uuid
 
 from datetime import timezone
 from jose import JWTError
+from hashlib import sha256
+
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks, Request, Query
 from fastapi.responses import RedirectResponse
 from fastapi.security import OAuth2PasswordRequestForm
@@ -16,13 +19,14 @@ from urllib.parse import urlencode
 from app.models.user import AccountUser
 
 from app.modules.systems.utils import utcnow
-from app.modules.systems.email_service import send_verification_email
+from app.modules.systems.email_service import send_verification_email, send_password_reset_email
 from app.modules.auth.deps import *
 from app.modules.auth.schemas import *
-from app.modules.auth.security import *
+from app.modules.auth.security import _hash_jti, create_access_token, create_refresh_token, create_email_verify_token, decode_token, decode_password_reset_token, hash_password, verify_password,hash_verify_jti, create_password_reset_token
+from app.modules.systems.config import get_settings
 from app.modules.auth.oauth import create_oauth_state, get_provider_client, resolve_oauth_user, verify_oauth_state
 from app.modules.accounts.serivce import build_user_me
-from app.modules.accounts.constants import UserRole
+
 
 
 settings = get_settings()
@@ -347,6 +351,7 @@ async def google_oauth_callback(
         provider_sub=sub,
         email=email,
         email_verified=email_verified,
+        role=None
     )
 
     # Issue tokens
@@ -387,3 +392,94 @@ async def google_oauth_callback(
     )
 
     return resp
+
+### FORGOT PASSWORD ROUTE ###
+@router.post(
+    "/password/forgot",
+    response_model=ForgotPasswordResponse,
+    status_code=status.HTTP_200_OK,
+)
+def forgot_password(
+    payload: ForgotPasswordRequest,
+    bg: BackgroundTasks,
+    db: Session = Depends(get_db),
+):
+    user = db.execute(
+        select(AccountUser).where(AccountUser.email == payload.email)
+    ).scalar_one_or_none()
+
+    # Always return ok to avoid revealing whether the email exists
+    if not user:
+        return ForgotPasswordResponse()
+
+    # Optional: skip reset for OAuth-only accounts with no password
+    if not user.password_hash:
+        return ForgotPasswordResponse()
+
+    token, jti_hash, exp = create_password_reset_token(subject=str(user.uid))
+
+    user.password_reset_jti_hash = jti_hash
+    user.password_reset_expires_at = exp
+    db.add(user)
+    db.commit()
+    
+    bg.add_task(
+        send_password_reset_email,
+        to_email=user.email,
+        token=token,
+    )
+
+    return ForgotPasswordResponse()
+
+@router.post(
+    "/password/reset",
+    response_model=ResetPasswordResponse,
+    status_code=status.HTTP_200_OK,
+)
+def reset_password(
+    payload: ResetPasswordRequest,
+    db: Session = Depends(get_db),
+):
+    try:
+        decoded = decode_password_reset_token(payload.token)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+    user_uid = decoded.get("sub")
+    jti = decoded.get("jti")
+    if not user_uid or not jti:
+        raise HTTPException(status_code=400, detail="Invalid reset token")
+
+    user = db.execute(
+        select(AccountUser).where(AccountUser.uid == uuid.UUID(user_uid))
+    ).scalar_one_or_none()
+
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid reset token")
+
+    if not user.password_reset_jti_hash or not user.password_reset_expires_at:
+        raise HTTPException(status_code=400, detail="Reset token is invalid or already used")
+    
+
+    expires_at = user.password_reset_expires_at
+    now = utcnow()
+
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+
+    if expires_at < now:
+        raise HTTPException(status_code=400, detail="Reset token has expired")
+
+    incoming_jti_hash = _hash_jti(jti)
+    if incoming_jti_hash != user.password_reset_jti_hash:
+        raise HTTPException(status_code=400, detail="Invalid reset token")
+
+    user.password_hash = hash_password(payload.new_password)
+    user.token_version += 1
+    user.password_reset_jti_hash = None
+    user.password_reset_expires_at = None
+ 
+    db.add(user)
+    db.commit()
+
+    return ResetPasswordResponse()

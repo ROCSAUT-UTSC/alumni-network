@@ -26,6 +26,7 @@ class Settings:
 
     # Email
     FRONTEND_URL: str = os.environ["FRONTEND_URL"]
+    EMAIL_FROM: str = os.environ["EMAIL_FROM"]
     RESEND_API_KEY: str = os.environ["RESEND_API_KEY"]
     VERIFY_RESEND_COOLDOWN_SECONDS: int = 60
     REQUIRE_VERIFY: bool = True

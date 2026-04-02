@@ -33,3 +33,17 @@ def send_verification_email(*, to_email: str, token: str) -> dict:
       <p>This link expires soon. If you didn’t request this, ignore this email.</p>
     """
     return send_email(to=to_email, subject="Verify your email", html=html)
+
+
+def send_password_reset_email(*, to_email: str, token: str) -> None:
+    reset_url = f"{settings.FRONTEND_URL}/reset-password?token={token}"
+
+    subject = "Reset your password"
+    html = f"""
+    <p> We received a request to reset your password. <p>
+    <p>Reset your password here:<a href="{reset_url}">Reset Password</a></p>
+
+    <p> If you did not request this, you can ignore this email. <p>
+    """
+
+    send_email(to=to_email, subject=subject, html=html)
