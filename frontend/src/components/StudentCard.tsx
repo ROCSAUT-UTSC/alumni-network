@@ -1,15 +1,16 @@
 import Image from "next/image";
 
-type AlumniCardProps = {
+type StudentCardProps = {
   firstname: string;
   lastname: string;
-  company: string;
-  role: string;
-  location: string;
+  major: string;
+  year: string;
+  institution: string;
   pronouns?: string;
   tags: string[];
   imageUrl?: string;
   onConnect?: () => void;
+  onViewProfile?: () => void;
   onTagClick?: (tag: string) => void;
 };
 
@@ -17,18 +18,19 @@ function getInitials(firstname: string, lastname: string) {
   return `${firstname?.[0] ?? ""}${lastname?.[0] ?? ""}`.toUpperCase();
 }
 
-export default function AlumniCard({
+export default function StudentCard({
   firstname,
   lastname,
-  company,
-  role,
-  location,
+  major,
+  year,
+  institution,
   pronouns = "she/her",
   tags,
   imageUrl,
   onConnect,
+  onViewProfile,
   onTagClick,
-}: AlumniCardProps) {
+}: StudentCardProps) {
   const shownTags = (tags ?? []).slice(0, 3);
 
   return (
@@ -57,42 +59,40 @@ export default function AlumniCard({
             <p className="mt-0.5 text-sm text-[#7A4B3D]">{pronouns}</p>
           </div>
 
-          <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-[#7A4B3D]/20 px-3 py-1 text-[12px] font-medium text-[#7A4B3D]">
-            Alumni
+          <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-[#6CA6B3]/20 px-3 py-1 text-[12px] font-medium text-[#007A97]">
+            Student
           </span>
         </div>
 
-        {/* Info grid */}
         <div className="grid grid-cols-2 gap-3">
           <div className="rounded-[18px] bg-[#7A4B3D]/[0.06] px-3 py-2">
             <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-[#7A4B3D]/70">
-              Company
+              Major
             </p>
             <p className="mt-1 text-[13px] font-medium leading-snug text-[#7A4B3D]">
-              {company}
+              {major}
             </p>
           </div>
 
           <div className="rounded-[18px] bg-[#7A4B3D]/[0.06] px-3 py-2">
             <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-[#7A4B3D]/70">
-              Role
+              Year of Study
             </p>
             <p className="mt-1 text-[13px] font-medium leading-snug text-[#7A4B3D]">
-              {role}
+              {year}
             </p>
           </div>
 
           <div className="col-span-2 rounded-[18px] bg-[#7A4B3D]/[0.06] px-3 py-2">
             <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-[#7A4B3D]/70">
-              Location
+              INSTITUTION
             </p>
             <p className="mt-1 text-[13px] font-medium leading-snug text-[#7A4B3D]">
-              {location}
+              {institution}
             </p>
           </div>
         </div>
 
-        {/* Tags */}
         <div className="flex flex-wrap gap-2">
           {shownTags.map((tag, idx) => (
             <button
@@ -105,13 +105,21 @@ export default function AlumniCard({
           ))}
         </div>
 
-        {/* CTA */}
-        <div className="pt-1">
+        <div className="flex gap-3 pt-1">
+          {/* Connect (outlined) */}
           <button
             onClick={onConnect}
-            className="w-full rounded-full border-[2px] border-[#7A4B3D] bg-transparent px-6 py-2.5 text-[14px] font-semibold text-[#007A97] transition hover:bg-[#7A4B3D]/5 active:scale-[0.98]"
+            className="flex-1 rounded-full border-2 border-[#7A4B3D] bg-transparent px-6 py-3 text-[14px] font-semibold text-[#007A97] transition hover:bg-[#7A4B3D]/5"
           >
             Connect
+          </button>
+
+          {/* View Profile (filled) */}
+          <button
+            onClick={onViewProfile}
+            className="flex-1 rounded-full bg-[#E3D8CF] px-6 py-3 text-[14px] font-semibold text-[#7A4B3D] transition hover:brightness-95"
+          >
+            View Profile
           </button>
         </div>
       </div>
