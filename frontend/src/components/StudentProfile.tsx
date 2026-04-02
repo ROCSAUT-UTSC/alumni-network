@@ -6,10 +6,12 @@ import { ProfileField } from "./ProfileField";
 export default function StudentProfile() {
   return (
     <ProfileShell
+      role="student"
+      avatarScale={1.6}
       sidebarItems={[
-        { label: "Dashboard", active: true },
-        { label: "Account Details" },
-        { label: "Change Password", active: true },
+        { label: "Basic Info", active: true },
+        { label: "School Info" },
+        { label: "Profile Info", active: true },
         { label: "Logout", active: true },
       ]}
     >
