@@ -9,10 +9,10 @@ from app.modules.systems.utils import utcnow
 
 router = APIRouter(prefix="/students", tags=["students"])
 
-fake_uid = uuid.UUID("34ec903b-6a41-4977-a646-97394f45d9d5")
+fake_uid = uuid.UUID("7529b66c-8aa7-4024-bb64-96c1816c3393")
 fake_user = AccountUser(
         uid=fake_uid,
-        email="arvin111@example.com",
+        email="testing@example.com",
         role=UserRole.STUDENT,
         is_active=True,
         is_verified=True,
@@ -67,7 +67,7 @@ def get_student_profile(
 def create_student_profile(
     payload: StudentCreate,
     db: Session = Depends(get_db),
-    user : AccountUser = fake_user #user: AccountUser = Depends(get_current_user),
+    user: AccountUser = Depends(get_current_user),
 ) -> StudentPublic:
     """
     Create the current users's student profile.

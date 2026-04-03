@@ -18,10 +18,10 @@ from app.modules.systems.utils import utcnow
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
-fake_uid = uuid.UUID("34ec903b-6a41-4977-a646-97394f45d9d5")
+fake_uid = uuid.UUID("7529b66c-8aa7-4024-bb64-96c1816c3393")
 fake_user = AccountUser(
         uid=fake_uid,
-        email="arvin123@example.com",
+        email="testing@example.com",
         role=UserRole.STUDENT,
         is_active=True,
         is_verified=True,
@@ -81,27 +81,32 @@ def get_account_by_id(
 def deactivate_account(
    account_uid:uuid.UUID,
    db:Session = Depends(get_db),
-   #user: AccountUser = Depends(get_current_user) #Reminder of get_current_user, is it only needed to do update or delete since it needs auth.
+   user: AccountUser = Depends(get_current_user) 
 ) -> AccountPublic:
     profile = _get_user_profile(db, account_uid)
     profile.is_active = False
+    db.commit()
+    db.refresh(profile)
     return profile
 
-@router.patch("accounts/{account_uid}/reactivate", response_model=AccountPublic)
+@router.patch("/accounts/{account_uid}/reactivate", response_model=AccountPublic)
 def reactivate_account(
    account_uid:uuid.UUID,
-   db: Session = Depends(get_db)
+   db: Session = Depends(get_db),
+   user: AccountUser = Depends(get_current_user)
 ) -> AccountPublic:
     profile = _get_user_profile(db, account_uid)
     profile.is_active = True
+    db.commit()
+    db.refresh(profile)
     return profile
 
-@router.post("accounts/{student_uid}/convert_to_alumni", response_model=AlumniPublic)
+@router.post("/accounts/{student_uid}/convert_to_alumni", response_model=AlumniPublic)
 def promote_student_to_alumni(
     account_uid : uuid.UUID,
     student_to_alumni: AlumniFromStudentCreate,
     db: Session = Depends(get_db),
-    user: AccountUser = fake_user#Depends(get_current_user)
+    user: AccountUser = Depends(get_current_user)
 ) -> AlumniPublic:
    #Didn't check if user.uid == account_uid
 

@@ -50,7 +50,7 @@ def _get_alumni_profile(db: Session, user_uid: uuid.UUID) -> AlumniProfile:
 def create_alumni_profile(
     payload: AlumniCreate,
     db: Session = Depends(get_db),
-    user: AccountUser = fake_user,#AccountUser = Depends(get_current_user),
+    user: AccountUser = Depends(get_current_user),
 ) -> AlumniPublic:
     """
     Create the current users's alumni profile.
@@ -82,7 +82,7 @@ def create_alumni_profile(
 @router.get("/me", response_model=AlumniPublic)
 def get_alumni(
     db: Session = Depends(get_db),
-    user: AccountUser = fake_user #Depends(get_current_user),
+    user: AccountUser = Depends(get_current_user),
 ) -> AlumniPublic:
     """
     Get the current alumni's profile.
@@ -95,7 +95,7 @@ def get_alumni(
 def update_alumni(
     payload: AlumniUpdate,
     db: Session = Depends(get_db),
-    user: AccountUser = fake_user #Depends(get_current_user),
+    user: AccountUser = Depends(get_current_user),
 ) -> AlumniPublic:
     """
     Partially update the current alumni's profile.
