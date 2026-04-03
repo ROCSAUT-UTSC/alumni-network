@@ -2,10 +2,11 @@ import secrets
 import bcrypt
 import hashlib
 import hmac
+import uuid
 from jose import jwt, JWTError
 from typing import Any, Dict, Literal, Optional
-from datetime import timedelta
-from passlib.context import CryptContext
+from datetime import timedelta,datetime
+
 
 from app.modules.systems.utils import utcnow
 from app.modules.systems.config import get_settings
@@ -89,3 +90,39 @@ def decode_token(token: str, *, expected_type: Optional[TokenType] = None) -> Di
 def hash_verify_jti(jti: str) -> str:
     return _hash_jti(jti)
 
+
+def create_password_reset_token(*, subject: str) -> tuple[str, str, datetime]:
+    now = utcnow()
+    exp = now + timedelta(hours=1)
+    jti = str(uuid.uuid4())
+
+    payload = {
+        "sub": subject,
+        "jti": jti,
+        "typ": "password_reset",
+        "iat": int(now.timestamp()),
+        "exp": int(exp.timestamp()),
+    }
+
+    token = jwt.encode(
+        payload,
+        settings.JWT_SECRET_KEY,
+        algorithm=settings.JWT_ALGORITHM,
+    )
+    return token, _hash_jti(jti), exp
+
+
+def decode_password_reset_token(token: str) -> dict:
+    try:
+        payload = jwt.decode(
+            token,
+            settings.JWT_SECRET_KEY,
+            algorithms=[settings.JWT_ALGORITHM],
+        )
+    except JWTError as exc:
+        raise ValueError("Invalid or expired reset token") from exc
+
+    if payload.get("typ") != "password_reset":
+        raise ValueError("Invalid reset token type")
+
+    return payload

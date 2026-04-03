@@ -109,6 +109,24 @@ def update_student(
 
     return profile
 
+@router.get("/directory", response_model=Iterable[StudentPublic])
+def get_student_directory(
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+) -> Iterable[StudentPublic]:
+    """
+    Get all Student profiles.
+    """
+    profiles = (
+        db.query(StudentProfile)
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+    return profiles
+
+
 @router.get("/{uid}", response_model=StudentPublic)
 def get_student_by_id(
     uid: uuid.UUID,
@@ -119,20 +137,3 @@ def get_student_by_id(
     """
     profile = _get_student_profile(db, uid)
     return profile
-
-@router.get("/all", response_model=Iterable[StudentPublic])
-def get_all_students(
-    skip: int = 0,
-    limit: int = 100,
-    db: Session = Depends(get_db),
-) -> Iterable[StudentProfile]:
-    """
-    Get all student profiles.
-    """
-    profiles = (
-        db.query(StudentProfile)
-        .offset(skip)
-        .limit(limit)
-        .all()
-    )
-    return profiles

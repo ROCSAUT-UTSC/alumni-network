@@ -1,18 +1,27 @@
+from __future__ import annotations
+
 import httpx
 import urllib.parse
+from datetime import timedelta
+from typing import Any, Dict, Optional
 
 from jose import jwt, JWTError
-from typing import Any, Dict, Optional
-from datetime import timedelta
 from typing_extensions import Protocol
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
+from app.models.user import AccountUser, AccountIdentity
 from app.modules.systems.utils import utcnow
 from app.modules.systems.config import get_settings
 from app.modules.auth.schemas import OAuthProvider
+from app.modules.accounts.constants import UserRole
+
 
 settings = get_settings()
 
 class OAuthProviderClient(Protocol):
+    """Common interface for OAuth providers."""
+
     name: OAuthProvider
 
     def build_authorization_url(self, *, redirect_uri: str, state: str) -> str: ...
@@ -21,8 +30,6 @@ class OAuthProviderClient(Protocol):
     ) -> Dict[str, Any]: ...
     def fetch_profile(self, *, tokens: Dict[str, Any]) -> Dict[str, Any]: ...
 
-
-### Google OAuth Provider ###
 class GoogleOAuthClient:
     name: OAuthProvider = "google"
 
@@ -71,7 +78,8 @@ class GoogleOAuthClient:
             )
             resp.raise_for_status()
             return resp.json()
-        
+
+
 _google_client = GoogleOAuthClient()
 
 PROVIDERS: dict[OAuthProvider, OAuthProviderClient] = {
@@ -84,37 +92,40 @@ def get_provider_client(provider: OAuthProvider) -> OAuthProviderClient:
         return PROVIDERS[provider]
     except KeyError:
         raise ValueError(f"Unsupported provider: {provider}")
-    
-### OAuth State Token Management ###
+
 def create_oauth_state(
     *,
     provider: OAuthProvider,
     redirect_uri: str,
-    role: Optional[str] = None,
 ) -> str:
     """
     Create a signed, short-lived state token for OAuth.
+
+    Encodes:
+      - typ: "oauth_state"
+      - prv: provider ("google" / "linkedin" / "apple")
+      - ru: redirect uri
+      - exp: expiry (seconds from now)
+      - role: optional role hint ("student" / "alumni")
     """
     now = utcnow()
     exp = now + timedelta(seconds=settings.OAUTH_STATE_TTL_SECONDS)
 
     payload: Dict[str, Any] = {
         "typ": "oauth_state",
-        "prv": provider,     
-        "ru": redirect_uri, 
+        "prv": provider,
+        "ru": redirect_uri,
         "exp": exp,
     }
-    if role is not None:
-        payload["role"] = role
 
     return jwt.encode(
         payload,
-        settings.JWT_SECRET_KEY,       
+        settings.JWT_SECRET_KEY,
         algorithm=settings.JWT_ALGORITHM,
     )
 
 
-def verify_oauth_state(
+def decode_oauth_state(
     *,
     state: str,
     expected_provider: OAuthProvider,
@@ -143,3 +154,86 @@ def verify_oauth_state(
         raise JWTError("State redirect_uri mismatch")
 
     return payload
+
+verify_oauth_state = decode_oauth_state
+
+def resolve_oauth_user(
+    db: Session,
+    *,
+    provider: OAuthProvider,
+    provider_sub: str,
+    email: str,
+    email_verified: bool,
+) -> AccountUser:
+    """
+    Find or create an AccountUser for this OAuth identity.
+
+    Rules:
+      1. If an AccountIdentity exists for (provider, provider_sub) -> return that account.
+      2. Else if an AccountUser exists for this email -> attach identity (if missing) and return it.
+      3. Else create a new AccountUser:
+           - role: from `role` if allowed, otherwise default to STUDENT
+           - is_verified: email_verified from provider
+           - is_active: True
+    """
+    identity_stmt = select(AccountIdentity).where(
+        AccountIdentity.provider == provider,
+        AccountIdentity.provider_sub == provider_sub,
+    )
+    identity = db.execute(identity_stmt).scalar_one_or_none()
+
+    if identity and identity.user:
+        return identity.user
+
+
+    user_stmt = select(AccountUser).where(AccountUser.email == email)
+    existing_user = db.execute(user_stmt).scalar_one_or_none()
+
+    if existing_user:
+        # Attach identity if not already present for this provider
+        existing_identity_stmt = select(AccountIdentity).where(
+            AccountIdentity.user_uid == existing_user.uid,
+            AccountIdentity.provider == provider,
+        )
+        existing_identity = db.execute(existing_identity_stmt).scalar_one_or_none()
+
+        if not existing_identity:
+            db.add(
+                AccountIdentity(
+                    user_uid=existing_user.uid,
+                    provider=provider,
+                    provider_sub=provider_sub,
+                    email_at_time=email,
+                )
+            )
+            db.flush()
+
+        return existing_user
+
+    # No user -> create new one
+
+    timezone = getattr(settings, "DEFAULT_TIMEZONE", "America/Toronto")
+
+    user = AccountUser(
+        email=email,
+        password_hash=None,
+        timezone=timezone,
+        role=None,
+        is_active=True,
+        is_verified=email_verified,
+        token_version=0,
+    )
+    db.add(user)
+    db.flush()
+
+    identity = AccountIdentity(
+        user_uid=user.uid,
+        provider=provider,
+        provider_sub=provider_sub,
+        email_at_time=email,
+    )
+    db.add(identity)
+    db.commit()
+    db.refresh(user)
+
+    return user

@@ -7,9 +7,6 @@ from sqlalchemy import engine_from_config, pool
 from sqlmodel import SQLModel
 
 from app.modules.systems.config import get_settings
-import app.models.user as user
-import app.models.account_identity as account_identity
-import app.models.refresh_session as refresh_session
 
 config = context.config
 if config.config_file_name is not None:
